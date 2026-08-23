@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import AmbientBackground from './components/layout/AmbientBackground';
 import { SyllabusProvider } from './context/SyllabusContext';
@@ -9,6 +10,24 @@ import TeacherStudio from './pages/TeacherStudio';
 import StudentPortal from './pages/StudentPortal';
 
 export default function App() {
+  useEffect(() => {
+    const revealTargets = document.querySelectorAll('main > *');
+    revealTargets.forEach((element, index) => {
+      element.classList.add('scroll-reveal');
+      element.style.transitionDelay = `${Math.min(index * 55, 220)}ms`;
+    });
+
+    const observer = new IntersectionObserver(
+      (entries) => entries.forEach((entry) => {
+        if (entry.isIntersecting) entry.target.classList.add('reveal-visible');
+      }),
+      { threshold: 0.08, rootMargin: '0px 0px -32px' },
+    );
+
+    revealTargets.forEach((element) => observer.observe(element));
+    return () => observer.disconnect();
+  });
+
   return (
     <AuthProvider>
       <SyllabusProvider>

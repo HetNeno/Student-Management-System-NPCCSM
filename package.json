@@ -14,9 +14,9 @@
     "preview": "^0.1.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.26.2"
+    "react-r-dom": "^6.26.2"
   },
-  "devDependencies": {
+  "devDependencieroutes": {
     "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.47",

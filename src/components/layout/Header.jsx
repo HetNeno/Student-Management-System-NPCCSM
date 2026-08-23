@@ -5,12 +5,12 @@ const SEMESTERS = [1, 2, 3, 4, 5, 6];
 
 const ACCENTS = {
   emerald: {
-    active: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-    icon: 'text-emerald-700',
+    active: 'border-[#978F66]/50 bg-[#E4D6A9]/45 text-[#622B14]',
+    icon: 'text-[#622B14]',
   },
   blue: {
-    active: 'border-blue-200 bg-blue-50 text-blue-700',
-    icon: 'text-blue-700',
+    active: 'border-[#978F66]/50 bg-[#E4D6A9]/45 text-[#622B14]',
+    icon: 'text-[#622B14]',
   },
 };
 
