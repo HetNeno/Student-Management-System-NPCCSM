@@ -1,6 +1,11 @@
-const MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+const MODEL = import.meta.env.VITE_GEMINI_MODEL || 'gemini-2.5-flash';
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
 export async function askGemini({ prompt, subject, semester, unitName, knowledgeBase, conversation }) {
+  if (!API_KEY) {
+    throw new Error('Gemini API key is not configured. Add VITE_GEMINI_API_KEY to your .env file.');
+  }
+
   const instructions = `You are Nova, a BCA career and learning advisor. Be concise, practical, and honest. No markdown formatting — use plain text only.
 
 Context:
@@ -13,7 +18,7 @@ ${(conversation || []).slice(-4).map((m) => `${m.role === 'user' ? 'Student' : '
 
 Student: ${prompt}`;
 
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${API_KEY}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

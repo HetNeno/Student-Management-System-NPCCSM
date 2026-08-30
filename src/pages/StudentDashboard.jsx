@@ -7,6 +7,7 @@ import { useToast } from '../components/shared/Toast';
 import { getSubjectsForSemester, getTotalTopics } from '../data/syllabusDatabase';
 import EmptyState from '../components/shared/EmptyState';
 import Button from '../components/shared/Button';
+import ConnectionBanner from '../components/shared/ConnectionBanner';
 
 const STUDENT_NOTES_KEY = 'npccsm_student_notes_v1';
 
@@ -79,13 +80,14 @@ export default function StudentDashboard() {
   });
 
   function toggleProject(id) {
+    const isCurrentlyStarted = startedProjects.includes(id);
     setStartedProjects((prev) => {
       const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
       localStorage.setItem(`npccsm_projects_${user?.id || 'guest'}`, JSON.stringify(next));
       return next;
     });
     const proj = PROJECTS.find((p) => p.id === id);
-    toast.success(prev.includes(id) ? `"${proj.title}" paused` : `"${proj.title}" started! Good luck.`);
+    toast.success(isCurrentlyStarted ? `"${proj.title}" paused` : `"${proj.title}" started! Good luck.`);
   }
 
   function handleSaveNote(message) {

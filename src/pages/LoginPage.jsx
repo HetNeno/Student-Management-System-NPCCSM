@@ -57,10 +57,12 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState(location.state?.error || location.state?.message || '');
 
-  if (user) {
-    const roleTarget = ROLES.find((r) => r.id === user.role)?.path || '/student';
-    navigate(roleTarget, { replace: true });
-  }
+  useEffect(() => {
+    if (user) {
+      const roleTarget = ROLES.find((r) => r.id === user.role)?.path || '/student';
+      navigate(roleTarget, { replace: true });
+    }
+  }, [user, navigate]);
 
   const selectedRoleConfig = ROLES.find((r) => r.id === activeRole) || ROLES[0];
 
