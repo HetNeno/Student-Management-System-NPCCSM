@@ -23,6 +23,7 @@ export default function StudentPortal() {
   const [assistantLoading, setAssistantLoading] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [savedNotes, setSavedNotes] = useState([]);
+  const [subjectKey, setSubjectKey] = useState(0);
   const { state, loading, usingFallback } = useSyllabus();
   const { user } = useAuth();
 
@@ -30,7 +31,7 @@ export default function StudentPortal() {
     try {
       const stored = localStorage.getItem(`${STUDENT_NOTES_KEY}_${user?.id || 'guest'}`);
       setSavedNotes(stored ? JSON.parse(stored) : []);
-    } catch (error) {
+    } catch {
       setSavedNotes([]);
     }
   }, [user?.id]);
@@ -50,7 +51,10 @@ export default function StudentPortal() {
   }
 
   const subjects = useMemo(() => getSubjectsForSemester(semester), [semester]);
-  useEffect(() => setSubjectIdx(0), [semester]);
+  useEffect(() => {
+    setSubjectIdx(0);
+    setSubjectKey((k) => k + 1);
+  }, [semester]);
 
   const activeSub = subjects[subjectIdx];
   const subState = activeSub ? state[activeSub.code] : null;
@@ -59,6 +63,8 @@ export default function StudentPortal() {
   const coveredTopics = subState?.coveredTopics?.length || 0;
   const completion = totalTopics ? Math.round((coveredTopics / totalTopics) * 100) : 0;
   const notesCount = subState?.topicNotes ? Object.keys(subState.topicNotes).length : 0;
+
+  const isLow = completion < 60;
 
   async function handleStudyAssistantSubmit(e) {
     e.preventDefault();
@@ -82,7 +88,7 @@ export default function StudentPortal() {
       });
 
       setAssistantMessages((prev) => [...prev, { id: `${Date.now()}-bot`, role: 'bot', text: answer }]);
-    } catch (error) {
+    } catch {
       setAssistantMessages((prev) => [
         ...prev,
         {
@@ -109,25 +115,77 @@ export default function StudentPortal() {
       <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col space-y-6 p-4 md:p-6 lg:p-8">
         <ConnectionBanner show={usingFallback} />
 
+        {/* Hero Summary Cards */}
         <div key={`summary-${semester}-${activeSub?.code || 'empty'}`} className="content-change glass-panel rounded-[2rem] border-l-4 border-l-emerald-500 bg-white/85 p-5 md:p-7">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-emerald-600">Student dashboard</p>
               <h2 className="mt-1 text-2xl font-black tracking-tight text-slate-900 md:text-3xl">NPCCSM study progress</h2>
+              <p className="mt-1.5 text-xs font-medium text-slate-500">
+                Semester {semester} &middot; {activeSub ? activeSub.title : 'Select a subject to begin'}
+              </p>
             </div>
-            <div className="rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.18em] text-emerald-700">
-              {loading ? 'Loading' : `${completion}% completion`}
+            <div className="flex items-center gap-3">
+              <div className={`rounded-full border px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.18em] ${isLow ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`}>
+                {loading ? 'Loading' : `${completion}% completion`}
+              </div>
+              {isLow && (
+                <span className="anim-bounce-in inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-amber-700">
+                  <i className="fas fa-triangle-exclamation" /> At risk
+                </span>
+              )}
             </div>
           </div>
 
           <div className="mt-5 grid gap-4 md:grid-cols-3">
-            <SummaryCard label="Current course" value={activeSub ? activeSub.code : '—'} hint={activeSub ? activeSub.title : 'No active subject'} icon="fas fa-book-open" tone="emerald" />
-            <SummaryCard label="Coverage" value={activeSub ? `${completion}%` : '0%'} hint={activeSub ? `${coveredTopics}/${totalTopics} topics covered` : 'No topic data'} icon="fas fa-chart-line" tone="blue" />
-            <SummaryCard label="Exam notes" value={String(notesCount)} hint={notesCount ? 'Important questions published' : 'No notes yet'} icon="fas fa-lightbulb" tone="amber" />
+            <div className="anim-fade-in-up card-hover-lift metric-card rounded-2xl p-4 stagger" style={{ animationDelay: '0ms' }}>
+              <div className="relative z-10 flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-slate-500">Current course</div>
+                  <div className="mt-2 text-2xl font-black tracking-tight text-slate-900">{activeSub ? activeSub.code : '—'}</div>
+                  <div className="mt-1 text-[11px] font-medium text-slate-500">{activeSub ? activeSub.title : 'No active subject'}</div>
+                </div>
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-emerald-100 bg-emerald-50 text-emerald-600">
+                  <i className="fas fa-book-open" />
+                </div>
+              </div>
+            </div>
+            <div className="anim-fade-in-up card-hover-lift metric-card rounded-2xl p-4 stagger" style={{ animationDelay: '80ms' }}>
+              <div className="relative z-10 flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-slate-500">Coverage</div>
+                  <div className="mt-2 text-2xl font-black tracking-tight text-slate-900">{activeSub ? `${completion}%` : '0%'}</div>
+                  <div className="mt-1 text-[11px] font-medium text-slate-500">{activeSub ? `${coveredTopics}/${totalTopics} topics covered` : 'No topic data'}</div>
+                </div>
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-blue-100 bg-blue-50 text-blue-600">
+                  <i className="fas fa-chart-line" />
+                </div>
+              </div>
+              {/* Mini progress bar */}
+              <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-100">
+                <div
+                  className={`h-full rounded-full transition-all duration-700 ${isLow ? 'bg-gradient-to-r from-amber-500 to-orange-500' : 'bg-gradient-to-r from-emerald-500 to-green-500'}`}
+                  style={{ width: `${completion}%` }}
+                />
+              </div>
+            </div>
+            <div className="anim-fade-in-up card-hover-lift metric-card rounded-2xl p-4 stagger" style={{ animationDelay: '160ms' }}>
+              <div className="relative z-10 flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-slate-500">Exam notes</div>
+                  <div className="mt-2 text-2xl font-black tracking-tight text-slate-900">{String(notesCount)}</div>
+                  <div className="mt-1 text-[11px] font-medium text-slate-500">{notesCount ? 'Important questions published' : 'No notes yet'}</div>
+                </div>
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-amber-100 bg-amber-50 text-amber-600">
+                  <i className="fas fa-lightbulb" />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="glass-panel rounded-[1.75rem] border border-slate-200/80 bg-white/80 p-3 md:p-4">
+        {/* Subject Selector */}
+        <div className="anim-fade-in-up glass-panel rounded-[1.75rem] border border-slate-200/80 bg-white/80 p-3 md:p-4" style={{ animationDelay: '200ms' }}>
           <div className="mb-3 flex items-center justify-between gap-3 px-2">
             <h3 className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-slate-500">Select subject</h3>
             <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">{subjects.length} courses</span>
@@ -145,17 +203,17 @@ export default function StudentPortal() {
 
                 return (
                   <button
-                    key={sub.code}
-                    onClick={() => setSubjectIdx(idx)}
+                    key={`${semester}-${sub.code}-${idx}`}
+                    onClick={() => { setSubjectIdx(idx); setSubjectKey((k) => k + 1); }}
                     type="button"
-                    className={`shrink-0 rounded-2xl border px-3 py-2.5 text-left transition-all duration-300 hover:-translate-y-0.5 ${
+                    className={`shrink-0 rounded-2xl border px-3 py-2.5 text-left transition-all duration-300 hover:-translate-y-0.5 btn-press ${
                       isActive
-                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700 shadow-md shadow-emerald-100'
+                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700 shadow-md shadow-emerald-100 anim-border-glow'
                         : 'border-slate-200 bg-white text-slate-600 hover:border-emerald-100 hover:bg-slate-50'
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
-                      <span className={`flex h-8 w-8 items-center justify-center rounded-xl ${isActive ? 'bg-white text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>
+                      <span className={`flex h-8 w-8 items-center justify-center rounded-xl transition-all duration-300 ${isActive ? 'bg-white text-emerald-600 scale-110' : 'bg-slate-100 text-slate-500'}`}>
                         <i className={sub.iconClass} />
                       </span>
                       <div>
@@ -170,12 +228,13 @@ export default function StudentPortal() {
           </div>
         </div>
 
-        <div key={`courses-${semester}-${activeSub?.code || 'empty'}`} className="content-change grid gap-6 lg:grid-cols-12">
+        {/* Main Content: Updates Feed + Coverage */}
+        <div key={`courses-${semester}-${activeSub?.code || 'empty'}-${subjectKey}`} className="content-change grid gap-6 lg:grid-cols-12">
           <div className="lg:col-span-7">
-            <div className="glass-panel rounded-[1.75rem] border border-slate-200/80 bg-white/80 p-5 md:p-6">
+            <div className="anim-fade-in-up glass-panel rounded-[1.75rem] border border-slate-200/80 bg-white/80 p-5 md:p-6" style={{ animationDelay: '100ms' }}>
               <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-500 ${activeSub ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
                     <i className="fas fa-rss" />
                   </div>
                   <div>
@@ -194,11 +253,11 @@ export default function StudentPortal() {
           </div>
 
           <div className="lg:col-span-5">
-            <div className="glass-panel rounded-[1.75rem] border border-slate-200/80 bg-white/80 p-5 md:p-6">
+            <div className="anim-fade-in-up glass-panel rounded-[1.75rem] border border-slate-200/80 bg-white/80 p-5 md:p-6" style={{ animationDelay: '200ms' }}>
               <h3 className="border-b border-slate-100 pb-3 text-[11px] font-extrabold uppercase tracking-[0.2em] text-slate-500">Course coverage</h3>
               <div className="mt-4 space-y-4">
-                {activeSub && activeSub.units.map((unit) => (
-                  <div key={unit.name} className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                {activeSub && activeSub.units.map((unit, uIdx) => (
+                  <div key={unit.name} className="anim-fade-in-up rounded-2xl border border-slate-200 bg-slate-50/70 p-4" style={{ animationDelay: `${uIdx * 100}ms` }}>
                     <div className="mb-2 flex items-center justify-between gap-2">
                       <h4 className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-slate-600">{unit.name}</h4>
                       <span className="text-[10px] font-bold text-slate-500">{unit.topics.length} items</span>
@@ -207,9 +266,9 @@ export default function StudentPortal() {
                       {unit.topics.map((topic) => {
                         const isDone = subState?.coveredTopics?.includes(topic);
                         return (
-                          <div key={topic} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2">
-                            <span className={`text-[11px] font-semibold ${isDone ? 'text-emerald-700' : 'text-slate-500'}`}>{topic}</span>
-                            <i className={`fas ${isDone ? 'fa-circle-check text-emerald-500' : 'fa-circle text-slate-300'} text-xs`} />
+                          <div key={topic} className={`topic-item flex items-center justify-between gap-3 rounded-xl border px-3 py-2 ${isDone ? 'border-emerald-200 bg-white' : 'border-slate-200 bg-white/60'}`}>
+                            <span className={`text-[11px] font-semibold transition-colors duration-300 ${isDone ? 'text-emerald-700' : 'text-slate-500'}`}>{topic}</span>
+                            <i className={`fas transition-all duration-300 ${isDone ? 'fa-circle-check text-emerald-500 scale-110' : 'fa-circle text-slate-300'}`} />
                           </div>
                         );
                       })}
@@ -222,6 +281,7 @@ export default function StudentPortal() {
         </div>
 
       </main>
+
       <ChatbotWidget
         open={chatOpen}
         onOpen={() => setChatOpen(true)}
@@ -240,43 +300,28 @@ export default function StudentPortal() {
   );
 }
 
-function SummaryCard({ label, value, hint, icon, tone }) {
-  const tones = {
-    emerald: { bg: 'bg-emerald-50 text-emerald-600', border: 'border-emerald-100' },
-    blue: { bg: 'bg-blue-50 text-blue-600', border: 'border-blue-100' },
-    amber: { bg: 'bg-amber-50 text-amber-600', border: 'border-amber-100' },
-  };
-
-  const style = tones[tone] || tones.emerald;
-
-  return (
-    <div className="metric-card rounded-2xl p-4">
-      <div className="relative z-10 flex items-start justify-between gap-3">
-        <div>
-          <div className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-slate-500">{label}</div>
-          <div className="mt-2 text-2xl font-black tracking-tight text-slate-900">{value}</div>
-          <div className="mt-1 text-[11px] font-medium text-slate-500">{hint}</div>
-        </div>
-        <div className={`flex h-11 w-11 items-center justify-center rounded-xl border ${style.border} ${style.bg}`}>
-          <i className={icon} />
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function UpdatesFeed({ subState, loading, semester, subjects }) {
   if (loading) {
-    return <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-10 text-center text-sm font-semibold text-slate-400">Loading updates…</div>;
+    return (
+      <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-10 text-center text-sm font-semibold text-slate-400">
+        <div className="spinner mx-auto mb-3" />
+        Loading updates…
+      </div>
+    );
   }
 
   if (subjects.length === 0) {
-    return <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-10 text-center text-sm font-semibold text-slate-400">Syllabus is currently pending upload for Semester {semester}.</div>;
+    return (
+      <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-10 text-center text-sm font-semibold text-slate-400">
+        Syllabus is currently pending upload for Semester {semester}.
+      </div>
+    );
   }
 
   if (!subState || !subState.coveredTopics || subState.coveredTopics.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-10 text-center text-sm font-semibold text-slate-400">
+        <i className="fas fa-inbox mb-3 block text-3xl text-slate-300" />
         No lecture updates published yet for this course.
       </div>
     );
@@ -285,7 +330,7 @@ function UpdatesFeed({ subState, loading, semester, subjects }) {
   const hasNotes = subState.topicNotes && Object.keys(subState.topicNotes).length > 0;
 
   return (
-    <div className="space-y-5 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 md:p-5">
+    <div className="anim-fade-in-up space-y-5 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 md:p-5">
       <div className="flex items-center justify-between gap-3 border-b border-slate-200 pb-3">
         <div>
           <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-500">Instructor</p>
@@ -299,8 +344,8 @@ function UpdatesFeed({ subState, loading, semester, subjects }) {
       <div>
         <p className="mb-2 text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-500">Covered topics</p>
         <div className="flex flex-wrap gap-2">
-          {subState.coveredTopics.map((t) => (
-            <span key={t} className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
+          {subState.coveredTopics.map((t, i) => (
+            <span key={t} className="anim-fade-in-up rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700 stagger" style={{ animationDelay: `${i * 40}ms` }}>
               {t}
             </span>
           ))}
@@ -308,14 +353,17 @@ function UpdatesFeed({ subState, loading, semester, subjects }) {
       </div>
 
       {hasNotes && (
-        <div className="space-y-3 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4">
+        <div className="anim-fade-in-up space-y-3 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4" style={{ animationDelay: '200ms' }}>
           <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-emerald-700">
-            <i className="fas fa-question-circle mr-1.5" /> Exam focus
+            <i className="fas fa-star mr-1.5 text-amber-500" /> Exam focus - Important questions
           </p>
-          {Object.entries(subState.topicNotes).map(([topic, note]) => (
-            <div key={topic} className="rounded-xl border border-emerald-200 bg-white p-3 text-sm text-slate-700">
+          {Object.entries(subState.topicNotes).map(([topic, note], i) => (
+            <div key={topic} className="anim-fade-in-up rounded-xl border border-emerald-200 bg-white p-3 text-sm text-slate-700 card-hover-lift stagger" style={{ animationDelay: `${i * 80}ms` }}>
               <span className="mb-1 block text-[10px] font-extrabold uppercase tracking-[0.18em] text-emerald-700">{topic}</span>
-              {note}
+              <div className="flex gap-2">
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-100 text-[9px] font-black text-amber-700">{i + 1}</span>
+                <span className="text-xs leading-relaxed text-slate-600">{note}</span>
+              </div>
             </div>
           ))}
         </div>
