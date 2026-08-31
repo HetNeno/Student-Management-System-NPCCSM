@@ -36,6 +36,35 @@ const ROLES = [
   },
 ];
 
+/* Wave SVG components for background */
+function LoginWaveBackground() {
+  return (
+    <div className="wave-bg">
+      {/* Animated wave blobs */}
+      <div className="wave-blob wave-blob-1" />
+      <div className="wave-blob wave-blob-2" />
+      <div className="wave-blob wave-blob-3" />
+
+      {/* SVG Wave layers */}
+      <div className="wave-layer wave-layer-1" style={{ bottom: '-5%', opacity: 0.06 }}>
+        <svg viewBox="0 0 1440 320" preserveAspectRatio="none" style={{ width: '100%', height: '100%' }}>
+          <path fill="#A52A2A" d="M0,160L48,176C96,192,192,224,288,213.3C384,203,480,149,576,138.7C672,128,768,160,864,170.7C960,181,1056,171,1152,154.7C1248,139,1344,117,1392,106.7L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z" />
+        </svg>
+      </div>
+      <div className="wave-layer wave-layer-2" style={{ bottom: '-5%', opacity: 0.04 }}>
+        <svg viewBox="0 0 1440 320" preserveAspectRatio="none" style={{ width: '100%', height: '100%' }}>
+          <path fill="#B24848" d="M0,224L48,213.3C96,203,192,181,288,181.3C384,181,480,203,576,224C672,245,768,267,864,261.3C960,256,1056,224,1152,202.7C1248,181,1344,171,1392,165.3L1440,160L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z" />
+        </svg>
+      </div>
+      <div className="wave-layer wave-layer-3" style={{ bottom: '-5%', opacity: 0.03 }}>
+        <svg viewBox="0 0 1440 320" preserveAspectRatio="none" style={{ width: '100%', height: '100%' }}>
+          <path fill="#C46060" d="M0,288L48,272C96,256,192,224,288,213.3C384,203,480,213,576,234.7C672,256,768,288,864,282.7C960,277,1056,235,1152,213.3C1248,192,1344,192,1392,192L1440,192L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z" />
+        </svg>
+      </div>
+    </div>
+  );
+}
+
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -83,19 +112,11 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
-      {/* Subtle decorative shapes */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div
-          className="absolute -top-40 -right-40 w-96 h-96 rounded-full opacity-30"
-          style={{ background: `radial-gradient(circle, ${selectedRoleConfig.color}15, transparent 70%)` }}
-        />
-        <div
-          className="absolute -bottom-32 -left-32 w-80 h-80 rounded-full opacity-20"
-          style={{ background: `radial-gradient(circle, ${selectedRoleConfig.color}20, transparent 70%)` }}
-        />
-      </div>
+    <div className="relative min-h-screen overflow-hidden" style={{ background: 'linear-gradient(180deg, #FFF8F7 0%, #FFFFFF 40%, #FFF0EF 100%)' }}>
+      {/* Wave Background with blur effect */}
+      <LoginWaveBackground />
 
+      {/* Main Content */}
       <div className="relative z-10 flex min-h-screen items-center justify-center p-4">
         <div
           className={`w-full max-w-5xl grid gap-10 lg:grid-cols-[1fr_1fr] transition-all duration-700 ${
@@ -104,20 +125,22 @@ export default function LoginPage() {
         >
           {/* Left Side - Branding */}
           <div className="flex flex-col justify-center space-y-8">
-            {/* Logo */}
+            {/* Logo + Brand */}
             <div
               className={`transition-all duration-700 delay-100 ${
                 mounted ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
               }`}
             >
-              <div className="flex items-center gap-4 mb-2">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl shadow-lg"
-                  style={{ background: `linear-gradient(135deg, ${selectedRoleConfig.color}, ${selectedRoleConfig.color}dd)` }}>
-                  <i className="fas fa-graduation-cap text-2xl text-white" />
+              <div className="flex items-center gap-4 mb-6">
+                <div
+                  className="flex h-14 w-14 items-center justify-center rounded-2xl shadow-lg text-white"
+                  style={{ background: 'linear-gradient(135deg, #A52A2A, #B24848)' }}
+                >
+                  <i className="fas fa-graduation-cap text-2xl" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-slate-800 tracking-tight">NPCCSM</h2>
-                  <p className="text-xs font-medium text-slate-500 tracking-wide">Academic Command Center</p>
+                  <h2 className="text-xl font-bold tracking-tight" style={{ color: '#1E293B' }}>NPCCSM</h2>
+                  <p className="text-xs font-medium" style={{ color: '#94A3B8' }}>Academic Command Center</p>
                 </div>
               </div>
             </div>
@@ -128,10 +151,10 @@ export default function LoginPage() {
                 mounted ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
               }`}
             >
-              <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 leading-tight tracking-tight">
+              <h1 className="text-4xl sm:text-5xl font-extrabold leading-tight tracking-tight" style={{ color: '#1E293B' }}>
                 Welcome Back
               </h1>
-              <p className="mt-4 text-lg text-slate-600 leading-relaxed max-w-md">
+              <p className="mt-4 text-lg leading-relaxed max-w-md" style={{ color: '#475569' }}>
                 Your intelligent academic companion. Track syllabus coverage, manage lectures, and accelerate your learning journey.
               </p>
             </div>
@@ -149,16 +172,17 @@ export default function LoginPage() {
               ].map((stat, i) => (
                 <div
                   key={i}
-                  className="group rounded-2xl border border-slate-200/80 bg-white/80 p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:border-slate-300 hover:-translate-y-0.5"
+                  className="group rounded-2xl border bg-white p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
+                  style={{ borderColor: 'rgba(178, 72, 72, 0.12)' }}
                 >
                   <div
                     className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl text-white"
-                    style={{ background: `linear-gradient(135deg, ${selectedRoleConfig.color}dd, ${selectedRoleConfig.color})` }}
+                    style={{ background: 'linear-gradient(135deg, #B24848, #C46060)' }}
                   >
                     <i className={`${stat.icon} text-sm`} />
                   </div>
-                  <div className="text-lg font-bold text-slate-800">{stat.label}</div>
-                  <div className="text-xs text-slate-500 mt-0.5">{stat.sub}</div>
+                  <div className="text-lg font-bold" style={{ color: '#1E293B' }}>{stat.label}</div>
+                  <div className="text-xs mt-0.5" style={{ color: '#94A3B8' }}>{stat.sub}</div>
                 </div>
               ))}
             </div>
@@ -171,11 +195,23 @@ export default function LoginPage() {
             }`}
           >
             <div className="w-full max-w-md">
-              <div className="rounded-3xl border border-slate-200/80 bg-white p-8 shadow-xl shadow-slate-200/50">
+              <div
+                className="rounded-3xl border bg-white p-8"
+                style={{
+                  boxShadow: '0 20px 40px -12px rgba(165, 42, 42, 0.15), 0 4px 6px -4px rgba(0,0,0,0.04)',
+                  borderColor: 'rgba(178, 72, 72, 0.15)',
+                }}
+              >
                 {/* Card Header */}
                 <div className="mb-8">
-                  <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Sign In</h2>
-                  <p className="mt-1.5 text-sm text-slate-500">Enter your credentials to continue</p>
+                  <div
+                    className="inline-flex h-12 w-12 items-center justify-center rounded-xl text-white mb-4 shadow-md"
+                    style={{ background: 'linear-gradient(135deg, #A52A2A, #B24848)' }}
+                  >
+                    <i className="fas fa-user text-lg" />
+                  </div>
+                  <h2 className="text-2xl font-bold tracking-tight" style={{ color: '#1E293B' }}>Sign In</h2>
+                  <p className="mt-1.5 text-sm" style={{ color: '#94A3B8' }}>Enter your credentials to continue</p>
                 </div>
 
                 {/* Role Selector */}
@@ -189,9 +225,17 @@ export default function LoginPage() {
                         onClick={() => handleRoleChange(role.id)}
                         className={`group rounded-xl border-2 p-3 text-center transition-all duration-200 ${
                           isActive
-                            ? 'border-slate-300 bg-slate-50 shadow-sm'
-                            : 'border-slate-100 bg-white hover:border-slate-200 hover:bg-slate-50/50'
+                            ? 'border-current shadow-sm'
+                            : 'hover:border-opacity-50'
                         }`}
+                        style={isActive ? {
+                          borderColor: role.color,
+                          background: `${role.color}10`,
+                          boxShadow: `0 0 0 3px ${role.color}15`,
+                        } : {
+                          borderColor: '#E2E8F0',
+                          background: '#FFFFFF',
+                        }}
                       >
                         <div
                           className={`mb-2 inline-flex h-10 w-10 items-center justify-center rounded-lg text-white text-sm transition-all duration-200 ${
@@ -201,7 +245,8 @@ export default function LoginPage() {
                         >
                           <i className={`${role.icon}`} />
                         </div>
-                        <div className={`text-xs font-semibold ${isActive ? 'text-slate-800' : 'text-slate-500'}`}>
+                        <div className={`text-xs font-semibold ${isActive ? '' : ''}`}
+                          style={{ color: isActive ? role.color : '#94A3B8' }}>
                           {role.label}
                         </div>
                       </button>
@@ -211,7 +256,7 @@ export default function LoginPage() {
 
                 {/* Error Message */}
                 {errorMsg && (
-                  <div className="mb-4 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 animate-[shake_0.5s_ease-in-out]">
+                  <div className="mb-4 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700" style={{ animation: 'shake 0.5s ease-in-out' }}>
                     <i className="fas fa-exclamation-circle mt-0.5 text-red-500" />
                     <span>{errorMsg}</span>
                   </div>
@@ -238,11 +283,11 @@ export default function LoginPage() {
                 <form onSubmit={handleSubmit} className="space-y-4">
                   {/* Username Input */}
                   <div>
-                    <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
+                    <label className="mb-2 block text-xs font-bold uppercase tracking-wider" style={{ color: '#64748B' }}>
                       Username
                     </label>
                     <div className="relative">
-                      <span className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-slate-400">
+                      <span className="pointer-events-none absolute inset-y-0 left-4 flex items-center" style={{ color: '#94A3B8' }}>
                         <i className="fas fa-user text-sm" />
                       </span>
                       <input
@@ -251,18 +296,33 @@ export default function LoginPage() {
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
                         placeholder={`${selectedRoleConfig.label} username`}
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-3.5 pl-11 pr-4 text-sm text-slate-800 placeholder-slate-400 outline-none transition-all duration-200 focus:border-slate-400 focus:bg-white focus:ring-2 focus:ring-slate-200"
+                        className="w-full rounded-xl border py-3.5 pl-11 pr-4 text-sm outline-none transition-all duration-200"
+                        style={{
+                          background: '#F8FAFC',
+                          borderColor: '#E2E8F0',
+                          color: '#1E293B',
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.background = '#FFFFFF';
+                          e.target.style.borderColor = '#D48080';
+                          e.target.style.boxShadow = '0 0 0 3px rgba(178, 72, 72, 0.1)';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.background = '#F8FAFC';
+                          e.target.style.borderColor = '#E2E8F0';
+                          e.target.style.boxShadow = 'none';
+                        }}
                       />
                     </div>
                   </div>
 
                   {/* Password Input */}
                   <div>
-                    <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
+                    <label className="mb-2 block text-xs font-bold uppercase tracking-wider" style={{ color: '#64748B' }}>
                       Password
                     </label>
                     <div className="relative">
-                      <span className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-slate-400">
+                      <span className="pointer-events-none absolute inset-y-0 left-4 flex items-center" style={{ color: '#94A3B8' }}>
                         <i className="fas fa-lock text-sm" />
                       </span>
                       <input
@@ -271,12 +331,28 @@ export default function LoginPage() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="Enter password"
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-3.5 pl-11 pr-11 text-sm text-slate-800 placeholder-slate-400 outline-none transition-all duration-200 focus:border-slate-400 focus:bg-white focus:ring-2 focus:ring-slate-200"
+                        className="w-full rounded-xl border py-3.5 pl-11 pr-11 text-sm outline-none transition-all duration-200"
+                        style={{
+                          background: '#F8FAFC',
+                          borderColor: '#E2E8F0',
+                          color: '#1E293B',
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.background = '#FFFFFF';
+                          e.target.style.borderColor = '#D48080';
+                          e.target.style.boxShadow = '0 0 0 3px rgba(178, 72, 72, 0.1)';
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.background = '#F8FAFC';
+                          e.target.style.borderColor = '#E2E8F0';
+                          e.target.style.boxShadow = 'none';
+                        }}
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword((prev) => !prev)}
-                        className="absolute inset-y-0 right-4 flex items-center text-slate-400 transition-colors hover:text-slate-600"
+                        className="absolute inset-y-0 right-4 flex items-center transition-colors hover:text-opacity-80"
+                        style={{ color: '#94A3B8' }}
                       >
                         <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'} text-sm`} />
                       </button>
@@ -288,7 +364,7 @@ export default function LoginPage() {
                     type="submit"
                     disabled={submitting}
                     className="group relative w-full overflow-hidden rounded-xl py-3.5 text-sm font-bold uppercase tracking-wider text-white shadow-lg transition-all duration-200 hover:shadow-xl hover:translate-y-[-1px] active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={{ background: `linear-gradient(135deg, ${selectedRoleConfig.color}, ${selectedRoleConfig.color}dd)` }}
+                    style={{ background: 'linear-gradient(135deg, #A52A2A, #B24848)' }}
                   >
                     <span className="relative z-10 flex items-center justify-center gap-2">
                       {submitting ? (
@@ -308,8 +384,8 @@ export default function LoginPage() {
 
                 {/* Footer */}
                 <div className="mt-6 text-center">
-                  <p className="text-xs text-slate-400">
-                    Demo: <span className="font-medium text-slate-600">student</span> / <span className="font-medium text-slate-600">student123</span>
+                  <p className="text-xs" style={{ color: '#94A3B8' }}>
+                    Demo: <span className="font-medium" style={{ color: '#64748B' }}>student</span> / <span className="font-medium" style={{ color: '#64748B' }}>student123</span>
                   </p>
                 </div>
               </div>
