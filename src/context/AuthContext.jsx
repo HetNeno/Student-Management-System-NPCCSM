@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
+import { apiLogin, isApiConfigured } from '../lib/apiClient';
 
 const AUTH_STORAGE_KEY = 'npccsm_auth_user_v1';
 
@@ -59,39 +59,34 @@ export function AuthProvider({ children }) {
       return { success: false, error: 'Please enter both username and password.' };
     }
 
-    // 1. Try Supabase verification if configured
-    if (isSupabaseConfigured) {
+    // 1. Try PostgreSQL backend verification if configured
+    if (isApiConfigured) {
       try {
-        const { data, error } = await supabase
-          .from('users')
-          .select('*')
-          .ilike('username', cleanUsername)
-          .eq('password', cleanPassword)
-          .maybeSingle();
+        const data = await apiLogin({ username: cleanUsername, password: cleanPassword, role: targetRole });
 
-        if (error) {
-          console.warn('[AuthContext] Supabase user query error, checking fallback demo users:', error.message);
-        } else if (data) {
-          if (data.role !== targetRole) {
-            return {
-              success: false,
-              error: `Permission Denied: Account '${cleanUsername}' is registered as '${data.role}', not '${targetRole}'.`,
-            };
-          }
+        if (data && data.id) {
           const sessionUser = {
             id: data.id,
             username: data.username,
             role: data.role,
             name: data.name || data.username,
             department: data.department || '',
-            source: 'supabase',
+            source: 'postgresql',
           };
           setUser(sessionUser);
           localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(sessionUser));
           return { success: true, user: sessionUser };
         }
       } catch (err) {
-        console.warn('[AuthContext] Supabase connection failed, checking fallback:', err.message);
+        // If it's a permission error (403), surface it to the user
+        if (err.message.includes('Permission Denied')) {
+          return { success: false, error: err.message };
+        }
+        // If it's invalid credentials (401), surface that too
+        if (err.message.includes('Invalid username')) {
+          // Fall through to demo users check below
+        }
+        console.warn('[AuthContext] Backend auth failed, checking fallback:', err.message);
       }
     }
 

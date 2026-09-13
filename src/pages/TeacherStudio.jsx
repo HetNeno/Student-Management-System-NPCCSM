@@ -1,14 +1,23 @@
 import { useEffect, useMemo, useState } from 'react';
-import Header from '../components/layout/Header';
+import { useNavigate } from 'react-router-dom';
 import ConnectionBanner from '../components/shared/ConnectionBanner';
-import Button from '../components/shared/Button';
 import EmptyState from '../components/shared/EmptyState';
 import { getSubjectsForSemester, getTotalTopics } from '../data/syllabusDatabase';
 import { useSyllabus } from '../context/SyllabusContext';
+import { useAuth } from '../context/AuthContext';
 import { useReminderScheduler } from '../hooks/useReminderScheduler';
 import { useToast } from '../components/shared/Toast';
 
 const todayISO = () => new Date().toISOString().split('T')[0];
+
+const SEMESTERS = [
+  { id: 1, label: 'Semester 1' },
+  { id: 2, label: 'Semester 2' },
+  { id: 3, label: 'Semester 3' },
+  { id: 4, label: 'Semester 4' },
+  { id: 5, label: 'Semester 5' },
+  { id: 6, label: 'Semester 6' },
+];
 
 export default function TeacherStudio() {
   const [semester, setSemester] = useState(5);
@@ -18,7 +27,11 @@ export default function TeacherStudio() {
   const [saving, setSaving] = useState(false);
   const [showReminder, setShowReminder] = useState(false);
   const [reminderSubject, setReminderSubject] = useState(null);
+  const [semDropdownOpen, setSemDropdownOpen] = useState(false);
+
   const toast = useToast();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const { state, loading, usingFallback, publishUpdate } = useSyllabus();
 
@@ -43,13 +56,28 @@ export default function TeacherStudio() {
     setSubjectKey((k) => k + 1);
   }, [activeSub?.code, loading]);
 
+  const handleLogout = () => {
+    logout();
+    navigate('/login', { replace: true });
+  };
+
   if (!activeSub) {
     return (
-      <div className="relative z-10 flex min-h-screen flex-col">
-        <Header icon="fas fa-chalkboard-teacher" title="Faculty Studio" semester={semester} onSemesterChange={setSemester} />
-        <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col p-4 md:p-6 lg:p-8">
+      <div className="min-h-screen bg-[#FDF8F7] text-stone-800">
+        <header className="sticky top-0 z-30 h-16 border-b border-stone-200/70 bg-white/80 backdrop-blur-xl px-6 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#8B2635] text-white">
+              <i className="fa-solid fa-chalkboard-user text-sm" />
+            </div>
+            <h1 className="text-base font-black text-stone-900">Faculty Studio</h1>
+          </div>
+          <button onClick={handleLogout} className="text-xs font-bold text-stone-500 hover:text-stone-800">
+            Sign out
+          </button>
+        </header>
+        <main className="mx-auto max-w-7xl p-8">
           <ConnectionBanner show={usingFallback} />
-          <EmptyState icon="fas fa-folder-open" title="No syllabus data" description={`No syllabus data for Semester ${semester}.`} />
+          <EmptyState icon="fa-solid fa-folder-open" title="No syllabus data" description={`No courses found for Semester ${semester}.`} />
         </main>
       </div>
     );
@@ -87,7 +115,7 @@ export default function TeacherStudio() {
       const nextErrors = {};
       missing.forEach((t) => (nextErrors[t] = true));
       setErrors(nextErrors);
-      toast.error('Important notes required for all marked topics', { title: 'Missing notes' });
+      toast.error('Important note/question required for all marked topics', { title: 'Missing notes' });
       return;
     }
 
@@ -101,89 +129,214 @@ export default function TeacherStudio() {
       semester,
       coveredTopics: draft.coveredTopics,
       topicNotes,
-      overallNotes: 'Updated via portal.',
+      overallNotes: 'Updated via Faculty Studio.',
       lectureDate,
       facultyName: facultyName || 'Prof. Faculty Member',
     });
     setSaving(false);
-    toast.success('Lecture update published successfully');
+    toast.success('Syllabus & lecture update published successfully');
   }
 
   return (
-    <div className="relative z-10 flex min-h-screen flex-col">
-      <Header icon="fas fa-chalkboard-teacher" title="Faculty Studio" semester={semester} onSemesterChange={setSemester} />
+    <div className="min-h-screen bg-[#FDF8F7] text-stone-800 font-sans antialiased">
+      {/* ── Sticky Glass Header ── */}
+      <header className="sticky top-0 z-40 h-16 border-b border-stone-200/70 bg-white/85 backdrop-blur-xl px-6 md:px-10 flex items-center justify-between shadow-[0_4px_24px_rgba(0,0,0,0.02)]">
+        <div className="flex items-center gap-3.5">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#8B2635] text-white shadow-md shadow-[#8B2635]/20">
+            <i className="fa-solid fa-chalkboard-user text-base" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black uppercase tracking-wider text-[#8B2635]">
+                Faculty Command
+              </span>
+              <span className="text-stone-300">&bull;</span>
+              <span className="text-[11px] font-bold text-stone-500">
+                Semester {semester}
+              </span>
+            </div>
+            <h1 className="text-base font-black text-stone-900 tracking-tight leading-tight">
+              Curriculum Studio &amp; Syllabus Manager
+            </h1>
+          </div>
+        </div>
 
-      <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col space-y-5 p-4 md:p-6 lg:p-8">
-        <ConnectionBanner show={usingFallback} />
+        <div className="flex items-center gap-3">
+          {/* Semester Dropdown Switcher */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setSemDropdownOpen(!semDropdownOpen)}
+              className="flex items-center gap-2 rounded-xl border border-stone-200/90 bg-white/90 px-3.5 py-1.5 text-xs font-bold text-stone-800 hover:border-stone-300 shadow-sm transition-all"
+            >
+              <i className="fa-regular fa-calendar text-stone-400 text-[11px]" />
+              <span>Semester {semester}</span>
+              <i className={`fa-solid fa-chevron-down text-[10px] text-stone-400 transition-transform ${semDropdownOpen ? 'rotate-180' : ''}`} />
+            </button>
 
-        {/* Stale Updates Alert */}
-        {staleSubjects.length > 0 && (
-          <div className="anim-fade-in-up rounded-xl border border-amber-200 bg-amber-50 p-4">
-            <div className="flex items-start gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-600">
-                <i className="fas fa-clock text-sm" />
-              </div>
-              <div className="flex-1">
-                <p className="text-xs font-bold text-amber-800">Stale updates detected — {staleSubjects.length} subject{staleSubjects.length > 1 ? 's' : ''} not updated in 42+ hours</p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {staleSubjects.map((sub) => {
-                    const hours = getHoursSinceUpdate(sub);
-                    return (
-                      <div key={sub.code} className="flex items-center gap-2 rounded-lg bg-white border border-amber-200 px-3 py-2">
-                        <span className="text-[11px] font-bold text-slate-700">{sub.code}</span>
-                        <span className="text-[10px] text-amber-600 font-medium">{hours}h ago</span>
-                        <button onClick={() => handleSendReminder(sub)} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 underline underline-offset-2">
-                          Send reminder
-                        </button>
-                      </div>
-                    );
-                  })}
+            {semDropdownOpen && (
+              <div className="absolute right-0 mt-2 w-44 rounded-2xl border border-stone-200/80 bg-white/95 backdrop-blur-xl p-1.5 shadow-xl z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                <div className="space-y-0.5">
+                  {SEMESTERS.map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => {
+                        setSemester(s.id);
+                        setSemDropdownOpen(false);
+                      }}
+                      className={`flex w-full items-center justify-between rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
+                        s.id === semester ? 'bg-[#8B2635] text-white shadow-sm font-black' : 'text-stone-700 hover:bg-stone-100'
+                      }`}
+                    >
+                      <span>{s.label}</span>
+                      {s.id === semester && <i className="fa-solid fa-check text-[10px]" />}
+                    </button>
+                  ))}
                 </div>
               </div>
-            </div>
+            )}
           </div>
-        )}
 
-        {/* Faculty Info */}
-        <div className="anim-fade-in-up glass-panel p-5 md:p-6">
+          {/* User Signout */}
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-1.5 text-xs font-bold text-stone-600 hover:bg-stone-50 transition-colors shadow-sm"
+          >
+            <i className="fa-solid fa-arrow-right-from-bracket text-xs text-stone-400" />
+            <span className="hidden sm:inline">Sign out</span>
+          </button>
+        </div>
+      </header>
+
+      {/* ── Main Workspace ── */}
+      <main className="mx-auto max-w-7xl p-5 md:p-8 space-y-6">
+        <ConnectionBanner show={usingFallback} />
+
+        {/* ── Top Overview & Faculty Identity Banner ── */}
+        <div className="rounded-2xl border border-stone-200/70 bg-white/85 backdrop-blur-md p-5 md:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.02)]">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-4">
-              <div className="anim-fade-in-scale flex h-14 w-14 items-center justify-center rounded-xl bg-indigo-50 text-xl text-indigo-600 shadow-sm">
-                <i className="fas fa-chalkboard-teacher" />
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-stone-100 text-stone-800">
+                <i className="fa-solid fa-user-tie text-xl" />
               </div>
               <div>
-                <input type="text" value={facultyName} onChange={(e) => setFacultyName(e.target.value)} placeholder="Faculty Name" className="border-b border-indigo-200 bg-transparent pb-1 text-lg font-black text-slate-800 outline-none transition focus:border-indigo-400" />
-                <p className="mt-1 text-xs text-slate-500">Department of Computer Studies &middot; BCA</p>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-[#8B2635]">
+                    Instructor Profile
+                  </span>
+                  <span className="text-stone-300">&bull;</span>
+                  <span className="text-[11px] text-stone-500 font-medium">BCA Department</span>
+                </div>
+                <input
+                  type="text"
+                  value={facultyName}
+                  onChange={(e) => setFacultyName(e.target.value)}
+                  placeholder="Enter Faculty Name"
+                  className="mt-0.5 border-b border-transparent bg-transparent text-base md:text-lg font-black text-stone-900 outline-none hover:border-stone-300 focus:border-[#8B2635] transition-colors"
+                />
               </div>
             </div>
+
             <div className="flex items-center gap-3">
-              <div className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-medium text-slate-600">
-                <span className="mr-2 text-indigo-500"><i className="far fa-calendar-check" /></span>
-                <span className="font-bold text-slate-500">Date</span>
-                <input type="date" value={lectureDate} onChange={(e) => setLectureDate(e.target.value)} className="ml-2 bg-transparent font-bold text-slate-800 outline-none" />
+              <div className="flex items-center gap-2 rounded-xl border border-stone-200/90 bg-[#FAF7F5] px-3.5 py-2 text-xs font-bold text-stone-700 shadow-sm">
+                <i className="fa-regular fa-calendar-check text-stone-400 text-xs" />
+                <span className="text-stone-400 uppercase text-[10px]">Lecture Date:</span>
+                <input
+                  type="date"
+                  value={lectureDate}
+                  onChange={(e) => setLectureDate(e.target.value)}
+                  className="bg-transparent font-black text-stone-900 outline-none cursor-pointer text-xs"
+                />
               </div>
             </div>
           </div>
         </div>
 
-        {/* KPI Cards */}
-        <div className="grid gap-4 md:grid-cols-4">
-          <KpiCard label="Coverage" value={`${pct}%`} hint={`${covered}/${total} topics`} icon="fas fa-chart-pie" tone="indigo" />
-          <KpiCard label="Subjects" value={String(subjects.length)} hint="This semester" icon="fas fa-layer-group" tone="emerald" />
-          <KpiCard label="Pending notes" value={String(notesPending)} hint={notesPending ? 'Required for covered topics' : 'All complete'} icon="fas fa-clipboard-list" tone={notesPending > 0 ? 'amber' : 'emerald'} />
-          <KpiCard label="Stale" value={String(staleSubjects.length)} hint="Not updated 42h+" icon="fas fa-clock" tone={staleSubjects.length > 0 ? 'red' : 'emerald'} />
+        {/* ── 4 KPI Metric Cards (Monochrome Simple Icons) ── */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-2xl border border-stone-200/70 bg-white/85 backdrop-blur-md p-4 shadow-[0_8px_30px_rgb(0,0,0,0.02)] flex flex-col justify-between">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-stone-400">Course Coverage</p>
+                <p className="mt-1 text-2xl font-black text-stone-900">{pct}%</p>
+                <p className="text-xs text-stone-500 mt-0.5">{covered} / {total} topics</p>
+              </div>
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-stone-100 text-stone-700">
+                <i className="fa-solid fa-chart-pie text-sm" />
+              </div>
+            </div>
+            <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-stone-100">
+              <div className="h-full rounded-full bg-[#8B2635] transition-all duration-500" style={{ width: `${pct}%` }} />
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-stone-200/70 bg-white/85 backdrop-blur-md p-4 shadow-[0_8px_30px_rgb(0,0,0,0.02)] flex flex-col justify-between">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-stone-400">Total Courses</p>
+                <p className="mt-1 text-2xl font-black text-stone-900">{subjects.length}</p>
+                <p className="text-xs text-stone-500 mt-0.5">Semester {semester} syllabus</p>
+              </div>
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-stone-100 text-stone-700">
+                <i className="fa-solid fa-book-bookmark text-sm" />
+              </div>
+            </div>
+            <div className="mt-3 text-[11px] font-bold text-stone-400">
+              Active curriculum modules
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-stone-200/70 bg-white/85 backdrop-blur-md p-4 shadow-[0_8px_30px_rgb(0,0,0,0.02)] flex flex-col justify-between">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-stone-400">Pending Notes</p>
+                <p className="mt-1 text-2xl font-black text-stone-900">{notesPending}</p>
+                <p className="text-xs text-stone-500 mt-0.5">{notesPending > 0 ? 'Action needed' : 'All topics noted'}</p>
+              </div>
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-stone-100 text-stone-700">
+                <i className="fa-solid fa-clipboard-check text-sm" />
+              </div>
+            </div>
+            <div className="mt-3 text-[11px] font-bold text-stone-400">
+              {notesPending > 0 ? 'Fill notes before publishing' : 'Ready to publish'}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-stone-200/70 bg-white/85 backdrop-blur-md p-4 shadow-[0_8px_30px_rgb(0,0,0,0.02)] flex flex-col justify-between">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-stone-400">Update Health</p>
+                <p className="mt-1 text-2xl font-black text-stone-900">{staleSubjects.length === 0 ? 'Optimal' : `${staleSubjects.length} Stale`}</p>
+                <p className="text-xs text-stone-500 mt-0.5">{staleSubjects.length > 0 ? 'Not updated in 42h+' : 'All current'}</p>
+              </div>
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-stone-100 text-stone-700">
+                <i className="fa-solid fa-clock text-sm" />
+              </div>
+            </div>
+            <div className="mt-3 text-[11px] font-bold text-stone-400">
+              Automated reminders active
+            </div>
+          </div>
         </div>
 
-        {/* Main Editor */}
-        <div className="grid gap-5 lg:grid-cols-12">
-          {/* Subject Sidebar */}
-          <div className="lg:col-span-4">
-            <div className="anim-fade-in-up glass-panel p-4">
-              <div className="mb-3 flex items-center justify-between border-b border-slate-100 pb-3">
-                <h3 className="section-label">Semester {semester} courses</h3>
-                <span className="text-[10px] font-bold text-slate-400">{subjects.length}</span>
+        {/* ── Main Two-Column Balanced Workspace ── */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+          {/* Left Column: Course Selector & Stale Reminders (4 cols) */}
+          <div className="space-y-5 lg:col-span-4">
+            {/* Course Selector */}
+            <div className="rounded-2xl border border-stone-200/70 bg-white/85 backdrop-blur-md p-4 shadow-[0_8px_30px_rgb(0,0,0,0.02)]">
+              <div className="flex items-center justify-between border-b border-stone-100 pb-3 mb-3">
+                <h2 className="text-xs font-black uppercase tracking-wider text-stone-900">
+                  Semester {semester} Courses
+                </h2>
+                <span className="text-[10px] font-bold text-stone-400">
+                  {subjects.length} subjects
+                </span>
               </div>
-              <div className="space-y-2 stagger">
+
+              <div className="space-y-2">
                 {subjects.map((sub, idx) => {
                   const s = state[sub.code] || { coveredTopics: [] };
                   const t = getTotalTopics(sub);
@@ -194,87 +347,184 @@ export default function TeacherStudio() {
                   const isStale = hoursAgo > 42;
 
                   return (
-                    <button key={`${semester}-${sub.code}`} type="button" onClick={() => setSubjectIdx(idx)} className={`anim-fade-in-up w-full rounded-xl border p-3 text-left transition-all btn-press ${isActive ? 'border-indigo-200 bg-indigo-50 shadow-sm' : 'border-slate-200 bg-white hover:border-indigo-100'}`} style={{ animationDelay: `${idx * 40}ms` }}>
+                    <button
+                      key={sub.code}
+                      type="button"
+                      onClick={() => setSubjectIdx(idx)}
+                      className={`w-full rounded-xl border p-3 text-left transition-all duration-200 flex flex-col justify-between ${
+                        isActive
+                          ? 'border-[#8B2635] bg-[#FFF1F2]/60 shadow-sm'
+                          : 'border-stone-200/80 bg-white hover:border-stone-300 hover:bg-[#FAF7F5]'
+                      }`}
+                    >
                       <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2.5">
-                          <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs transition ${isActive ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
-                            <i className={sub.iconClass} />
+                        <div className="min-w-0">
+                          <span className="rounded bg-stone-100 px-1.5 py-0.5 text-[10px] font-bold text-stone-600">
+                            {sub.code}
                           </span>
-                          <div>
-                            <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">{sub.code}</div>
-                            <div className="text-[11px] font-bold text-slate-700 truncate max-w-[120px]">{sub.title}</div>
-                          </div>
+                          <h3 className="mt-1 text-xs font-bold text-stone-900 truncate">
+                            {sub.title}
+                          </h3>
                         </div>
-                        <div className="flex flex-col items-end gap-1">
-                          <span className={`text-[10px] font-black ${isActive ? 'text-indigo-700' : 'text-slate-500'}`}>{p}%</span>
-                          {isStale && <span className="h-1.5 w-1.5 rounded-full bg-amber-400" title={`${hoursAgo}h since update`} />}
+                        <div className="text-right shrink-0">
+                          <span className="text-xs font-black text-stone-900">{p}%</span>
+                          {isStale && (
+                            <span className="block text-[9px] font-bold text-amber-600 mt-0.5">
+                              {hoursAgo}h ago
+                            </span>
+                          )}
                         </div>
                       </div>
-                      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
-                        <div className={`h-full rounded-full transition-all duration-500 ${p < 60 ? 'bg-gradient-to-r from-amber-400 to-orange-400' : 'bg-gradient-to-r from-indigo-500 to-violet-500'}`} style={{ width: `${p}%` }} />
+
+                      <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-stone-200/70">
+                        <div
+                          className="h-full rounded-full bg-[#8B2635] transition-all duration-500"
+                          style={{ width: `${p}%` }}
+                        />
                       </div>
                     </button>
                   );
                 })}
               </div>
             </div>
+
+            {/* Stale Updates & Reminders Box (Setup empty space) */}
+            {staleSubjects.length > 0 && (
+              <div className="rounded-2xl border border-amber-200/70 bg-amber-50/50 p-4 space-y-3">
+                <div className="flex items-center gap-2 text-amber-900">
+                  <i className="fa-solid fa-triangle-exclamation text-xs text-amber-600" />
+                  <h3 className="text-xs font-black uppercase tracking-wider">
+                    Stale Lecture Notice
+                  </h3>
+                </div>
+                <p className="text-[11px] text-amber-800 leading-relaxed">
+                  {staleSubjects.length} course{staleSubjects.length > 1 ? 's have' : ' has'} not had lecture updates logged in over 42 hours.
+                </p>
+                <div className="space-y-1.5">
+                  {staleSubjects.map((sub) => (
+                    <div key={sub.code} className="flex items-center justify-between rounded-xl bg-white p-2.5 border border-amber-200/70 shadow-sm">
+                      <div>
+                        <span className="text-xs font-bold text-stone-800">{sub.code}</span>
+                        <span className="ml-2 text-[10px] text-stone-400">{getHoursSinceUpdate(sub)}h ago</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleSendReminder(sub)}
+                        className="text-[11px] font-bold text-[#8B2635] hover:underline"
+                      >
+                        Remind &rarr;
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Topic Editor */}
-          <div className="lg:col-span-8">
-            <div className="anim-fade-in-up glass-panel p-5 md:p-6">
-              <div className="flex flex-col gap-3 border-b border-slate-100 pb-4 md:flex-row md:items-center md:justify-between">
+          {/* Right Column: Syllabus Upgrade Editor (8 cols) */}
+          <div className="lg:col-span-8 space-y-5">
+            <div className="rounded-2xl border border-stone-200/70 bg-white/85 backdrop-blur-md p-5 md:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.02)]">
+              {/* Course Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-4 mb-5">
+                <div>
+                  <span className="rounded bg-[#8B2635]/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-[#8B2635]">
+                    {activeSub.code} &middot; {activeSub.type || 'Major Course'}
+                  </span>
+                  <h2 className="text-lg font-black text-stone-900 tracking-tight mt-1">
+                    {activeSub.title}
+                  </h2>
+                </div>
+
                 <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50 text-lg text-indigo-600">
-                    <i className={activeSub.iconClass} />
+                  <div className="text-right">
+                    <span className="text-[10px] font-bold text-stone-400">Coverage</span>
+                    <p className="text-sm font-black text-stone-900">{pct}% Complete</p>
                   </div>
-                  <div>
-                    <div className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-700">{activeSub.code}</div>
-                    <h2 className="text-base font-black text-slate-800">{activeSub.title}</h2>
-                  </div>
-                </div>
-                <span className="badge badge-info">{pct}% covered</span>
-              </div>
-
-              <div key={`progress-${activeSub.code}-${subjectKey}`} className="content-change mt-5">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="section-label">Progress</span>
-                  <span className="text-[10px] font-bold text-slate-600">{covered}/{total} topics</span>
-                </div>
-                <div className="h-3 overflow-hidden rounded-full bg-slate-100 shadow-inner">
-                  <div className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-violet-500 anim-progress-fill" style={{ width: `${pct}%` }} />
                 </div>
               </div>
 
-              <form onSubmit={handleSubmit} className="content-change mt-6 space-y-4">
+              {/* Syllabus Upgrade Form */}
+              <form onSubmit={handleSubmit} className="space-y-4">
                 {activeSub.units.map((unit, uIdx) => (
-                  <div key={`${subjectKey}-${unit.name}`} className="anim-fade-in-up rounded-xl border border-slate-200 bg-slate-50/50 p-4" style={{ animationDelay: `${uIdx * 80}ms` }}>
-                    <div className="mb-3 flex items-center gap-2.5 border-b border-slate-200 pb-2.5">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-md bg-indigo-50 text-[10px] font-black text-indigo-600">{uIdx + 1}</span>
-                      <h3 className="text-[10px] font-extrabold uppercase tracking-wider text-slate-700">{unit.name}</h3>
+                  <div
+                    key={`${subjectKey}-${unit.name}`}
+                    className="rounded-xl border border-stone-200/70 bg-[#FAF7F5]/40 p-4 space-y-3"
+                  >
+                    <div className="flex items-center justify-between border-b border-stone-200/60 pb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="flex h-5 w-5 items-center justify-center rounded bg-stone-200 text-[10px] font-black text-stone-700">
+                          {uIdx + 1}
+                        </span>
+                        <h3 className="text-xs font-black uppercase tracking-wider text-stone-800">
+                          {unit.name}
+                        </h3>
+                      </div>
+                      <span className="text-[10px] font-bold text-stone-400">
+                        {unit.topics.length} topics
+                      </span>
                     </div>
-                    <div className="space-y-2.5 stagger">
+
+                    <div className="space-y-2.5">
                       {unit.topics.map((topic) => {
                         const isCovered = draft.coveredTopics.includes(topic);
                         const hasError = errors[topic];
+
                         return (
-                          <div key={topic} className={`rounded-xl border bg-white p-3 transition-all ${hasError ? 'border-red-300 shadow-md shadow-red-100' : isCovered ? 'border-indigo-200 shadow-sm' : 'border-slate-200'}`}>
+                          <div
+                            key={topic}
+                            className={`rounded-xl border p-3 transition-all duration-200 ${
+                              hasError
+                                ? 'border-red-300 bg-red-50/40 shadow-sm'
+                                : isCovered
+                                ? 'border-stone-300 bg-white shadow-sm'
+                                : 'border-stone-200/70 bg-white/70'
+                            }`}
+                          >
                             <label className="flex cursor-pointer items-start gap-3">
-                              <input type="checkbox" checked={isCovered} onChange={() => toggleTopic(topic)} className="hidden" />
-                              <div className={`mt-0.5 flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded border text-[9px] transition-all duration-200 ${isCovered ? 'border-indigo-500 bg-indigo-500 text-white' : 'border-slate-300 bg-slate-50 text-transparent'}`}>
-                                <i className="fas fa-check" />
+                              <input
+                                type="checkbox"
+                                checked={isCovered}
+                                onChange={() => toggleTopic(topic)}
+                                className="hidden"
+                              />
+                              <div
+                                className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-all ${
+                                  isCovered
+                                    ? 'border-[#8B2635] bg-[#8B2635] text-white'
+                                    : 'border-stone-300 bg-white'
+                                }`}
+                              >
+                                {isCovered && <i className="fa-solid fa-check text-[9px]" />}
                               </div>
-                              <span className={`text-xs font-semibold transition-colors ${isCovered ? 'text-indigo-700' : 'text-slate-700'}`}>{topic}</span>
+                              <span
+                                className={`text-xs font-semibold leading-relaxed ${
+                                  isCovered ? 'text-stone-900' : 'text-stone-600'
+                                }`}
+                              >
+                                {topic}
+                              </span>
                             </label>
+
+                            {/* Inline Note Input for covered topics */}
                             <div className="mt-2.5 pl-7">
                               <input
                                 type="text"
                                 value={draft.topicNotes[topic] || ''}
                                 onChange={(e) => setNote(topic, e.target.value)}
-                                placeholder="Add an important question or note..."
-                                className={`w-full rounded-lg border px-3 py-2 text-xs outline-none transition-all duration-200 ${hasError ? 'border-red-300 bg-red-50' : isCovered ? 'border-indigo-200 bg-indigo-50/30' : 'border-slate-200 bg-slate-50'}`}
+                                placeholder="Add key exam question or lecture summary note..."
+                                className={`w-full rounded-lg border px-3 py-1.5 text-xs outline-none transition-all ${
+                                  hasError
+                                    ? 'border-red-300 bg-red-50 text-red-900 placeholder:text-red-300'
+                                    : isCovered
+                                    ? 'border-stone-200 bg-[#FAF7F5] text-stone-800 focus:border-[#8B2635]'
+                                    : 'border-stone-200/60 bg-stone-50/50 text-stone-600 focus:bg-white'
+                                }`}
                               />
-                              {hasError && <p className="mt-1 text-[10px] font-bold text-red-500">Required when topic is marked covered.</p>}
+                              {hasError && (
+                                <p className="mt-1 text-[10px] font-bold text-red-600">
+                                  Required: Add exam note before publishing covered topic.
+                                </p>
+                              )}
                             </div>
                           </div>
                         );
@@ -283,73 +533,96 @@ export default function TeacherStudio() {
                   </div>
                 ))}
 
-                <Button type="submit" loading={saving} size="lg" icon="fas fa-cloud-arrow-up" className="w-full">
-                  {saving ? 'Publishing…' : 'Publish Update'}
-                </Button>
+                {/* Publish Action Button */}
+                <div className="pt-3">
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#8B2635] py-3 text-xs font-black text-white shadow-sm hover:bg-[#77212e] transition-all hover:-translate-y-0.5 shadow-[#8B2635]/20 disabled:opacity-50"
+                  >
+                    {saving ? (
+                      <>
+                        <i className="fa-solid fa-spinner fa-spin text-xs" />
+                        <span>Publishing Updates...</span>
+                      </>
+                    ) : (
+                      <>
+                        <i className="fa-solid fa-cloud-arrow-up text-xs" />
+                        <span>Publish Syllabus &amp; Lecture Updates</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </form>
             </div>
           </div>
         </div>
       </main>
 
-      {/* Reminder Modal */}
+      {/* ── Reminder Modal with Clean Styling ── */}
       {showReminder && reminderSubject && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4" onClick={() => setShowReminder(false)}>
-          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-2xl border border-slate-100 bg-white p-6 shadow-2xl">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
-                <i className="fas fa-paper-plane" />
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/30 backdrop-blur-sm p-4"
+          onClick={() => setShowReminder(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-2xl border border-stone-200 bg-white p-6 shadow-2xl space-y-4"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-stone-100 text-stone-700">
+                <i className="fa-solid fa-paper-plane text-sm" />
               </div>
               <div>
-                <h3 className="text-sm font-black text-slate-900">Send Reminder</h3>
-                <p className="text-[11px] text-slate-500">{reminderSubject.sub.code} — {reminderSubject.hours}h since last update</p>
+                <h3 className="text-sm font-black text-stone-900">Send Lecture Reminder</h3>
+                <p className="text-xs text-stone-500">
+                  {reminderSubject.sub.code} &middot; {reminderSubject.hours}h since last update
+                </p>
               </div>
             </div>
-            <p className="text-xs text-slate-600 mb-4">Choose how to send the reminder to the faculty member:</p>
-            <div className="space-y-2.5">
-              <a href={reminderSubject.mailto} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 transition hover:border-indigo-200 hover:bg-indigo-50">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600"><i className="fas fa-envelope text-sm" /></div>
+
+            <p className="text-xs text-stone-600 leading-relaxed">
+              Notify the faculty member assigned to this course to update lecture notes:
+            </p>
+
+            <div className="space-y-2">
+              <a
+                href={reminderSubject.mailto}
+                className="flex items-center gap-3 rounded-xl border border-stone-200 p-3 hover:border-stone-300 hover:bg-[#FAF7F5] transition-all"
+              >
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-stone-100 text-stone-700">
+                  <i className="fa-solid fa-envelope text-xs" />
+                </div>
                 <div>
-                  <p className="text-xs font-bold text-slate-800">Send Email</p>
-                  <p className="text-[10px] text-slate-500">Opens email client with pre-filled reminder</p>
+                  <p className="text-xs font-bold text-stone-900">Send Email Notification</p>
+                  <p className="text-[10px] text-stone-400">Pre-filled reminder draft</p>
                 </div>
               </a>
-              <a href={reminderSubject.smsLink} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 transition hover:border-indigo-200 hover:bg-indigo-50">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600"><i className="fas fa-comment-sms text-sm" /></div>
+
+              <a
+                href={reminderSubject.smsLink}
+                className="flex items-center gap-3 rounded-xl border border-stone-200 p-3 hover:border-stone-300 hover:bg-[#FAF7F5] transition-all"
+              >
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-stone-100 text-stone-700">
+                  <i className="fa-solid fa-comment-sms text-xs" />
+                </div>
                 <div>
-                  <p className="text-xs font-bold text-slate-800">Send SMS</p>
-                  <p className="text-[10px] text-slate-500">Opens messaging app with pre-filled text</p>
+                  <p className="text-xs font-bold text-stone-900">Send SMS Notification</p>
+                  <p className="text-[10px] text-stone-400">Direct mobile alert</p>
                 </div>
               </a>
             </div>
-            <button onClick={() => setShowReminder(false)} className="mt-4 w-full rounded-xl border border-slate-200 bg-white py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 transition">Close</button>
+
+            <button
+              type="button"
+              onClick={() => setShowReminder(false)}
+              className="w-full rounded-xl border border-stone-200 py-2 text-xs font-bold text-stone-600 hover:bg-stone-50 transition-colors"
+            >
+              Close
+            </button>
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-function KpiCard({ label, value, hint, icon, tone }) {
-  const tones = {
-    indigo: { bg: 'bg-indigo-50', border: 'border-indigo-100', text: 'text-indigo-600' },
-    emerald: { bg: 'bg-emerald-50', border: 'border-emerald-100', text: 'text-emerald-600' },
-    amber: { bg: 'bg-amber-50', border: 'border-amber-100', text: 'text-amber-600' },
-    red: { bg: 'bg-red-50', border: 'border-red-100', text: 'text-red-600' },
-  };
-  const t = tones[tone] || tones.indigo;
-  return (
-    <div className="anim-fade-in-up metric-card rounded-xl p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">{label}</p>
-          <p className="mt-2 text-2xl font-black tracking-tight text-slate-900">{value}</p>
-          <p className="mt-0.5 text-[10px] text-slate-500">{hint}</p>
-        </div>
-        <div className={`flex h-10 w-10 items-center justify-center rounded-xl border ${t.border} ${t.bg} ${t.text}`}>
-          <i className={icon} />
-        </div>
-      </div>
     </div>
   );
 }

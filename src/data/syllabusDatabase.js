@@ -1,7 +1,7 @@
 // Auto-extracted from the original static dashboards (principal.html / teacher.html / student.html).
 // Static curriculum reference data -- course structure rarely changes, so it stays
-// as a bundled JS module rather than a Supabase table. Everything that DOES change
-// (covered topics, notes, who taught what, when) lives in Supabase -- see src/lib/supabaseClient.js
+// as a bundled JS module rather than a database table. Everything that DOES change
+// (covered topics, notes, who taught what, when) lives in PostgreSQL -- see src/lib/apiClient.js
 // and src/context/SyllabusContext.jsx.
 
 export const syllabusDatabase = {

@@ -1,7 +1,16 @@
-﻿import { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { supabase, isSupabaseConfigured, REST_ENDPOINT, supabaseKey } from '../lib/supabaseClient';
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import {
+  isApiConfigured,
+  getLectureUpdates,
+  insertLectureUpdate,
+  upsertSyllabusProgress,
+  insertSyllabusHistory,
+  insertTeacherSubmission,
+  getLectureHistory,
+} from '../lib/apiClient';
 
 const LOCAL_STORAGE_KEY = 'npccsm_academic_state_v3';
+const POLL_INTERVAL_MS = 30_000; // Poll every 30 seconds (replaces Supabase Realtime)
 const SyllabusContext = createContext(null);
 
 const normalizeLectureRow = (row) => ({
@@ -18,13 +27,14 @@ const normalizeLectureRow = (row) => ({
 
 /**
  * Loads/saves per-subject progress state ({ [subjectCode]: { coveredTopics, topicNotes, ... } }).
- * Supabase is the source of truth when configured; otherwise this transparently
+ * The PostgreSQL backend is the source of truth when configured; otherwise this transparently
  * falls back to localStorage, mirroring the original static-HTML behaviour.
  */
 export function SyllabusProvider({ children }) {
   const [state, setState] = useState({});
   const [loading, setLoading] = useState(true);
-  const [usingFallback, setUsingFallback] = useState(!isSupabaseConfigured);
+  const [usingFallback, setUsingFallback] = useState(!isApiConfigured);
+  const pollRef = useRef(null);
 
   const loadLocal = () => {
     try {
@@ -39,7 +49,7 @@ export function SyllabusProvider({ children }) {
   };
 
   const refresh = useCallback(async () => {
-    if (!isSupabaseConfigured) {
+    if (!isApiConfigured) {
       setState(loadLocal());
       setUsingFallback(true);
       setLoading(false);
@@ -47,8 +57,7 @@ export function SyllabusProvider({ children }) {
     }
 
     try {
-      const { data, error } = await supabase.from('faculty_lecture_updates').select('*');
-      if (error) throw error;
+      const data = await getLectureUpdates();
 
       const byCode = {};
       for (const row of data) {
@@ -63,7 +72,7 @@ export function SyllabusProvider({ children }) {
       setState(byCode);
       setUsingFallback(false);
     } catch (err) {
-      console.error('[SyllabusContext] Supabase read failed, using local fallback:', err.message);
+      console.error('[SyllabusContext] Backend read failed, using local fallback:', err.message);
       setState(loadLocal());
       setUsingFallback(true);
     } finally {
@@ -71,19 +80,19 @@ export function SyllabusProvider({ children }) {
     }
   }, []);
 
+  // Initial load + polling (replaces Supabase Realtime channel)
   useEffect(() => {
     refresh();
-    if (!isSupabaseConfigured) return;
 
-    const channel = supabase
-      .channel('faculty_lecture_updates_changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'faculty_lecture_updates' }, () => {
-        refresh();
-      })
-      .subscribe();
+    if (!isApiConfigured) return;
+
+    // Poll for changes every POLL_INTERVAL_MS
+    pollRef.current = setInterval(() => {
+      refresh();
+    }, POLL_INTERVAL_MS);
 
     return () => {
-      supabase.removeChannel(channel);
+      if (pollRef.current) clearInterval(pollRef.current);
     };
   }, [refresh]);
 
@@ -100,8 +109,7 @@ export function SyllabusProvider({ children }) {
         facultyName,
       };
 
-
-      if (!isSupabaseConfigured) {
+      if (!isApiConfigured) {
         const next = { ...loadLocal(), [subjectCode]: payload };
         saveLocal(next);
         setState(next);
@@ -110,7 +118,8 @@ export function SyllabusProvider({ children }) {
       }
 
       try {
-        const insertPayload = {
+        // 1. Insert into faculty_lecture_updates
+        await insertLectureUpdate({
           subject_code: subjectCode,
           title,
           semester,
@@ -118,85 +127,55 @@ export function SyllabusProvider({ children }) {
           lecture_date: lectureDate,
           covered_topic: coveredTopics,
           mandatory_note: topicNotes,
-          created_at: new Date().toISOString(),
-        };
-
-        const { error: lectureError } = await supabase.from('faculty_lecture_updates').insert(insertPayload);
-        if (lectureError) throw lectureError;
-
-        const { error: progressError } = await supabase.from('syllabus_progress').upsert({
-          subject_code: subjectCode,
-          title,
-          semester,
-          covered_topics: coveredTopics,
-          topic_notes: topicNotes,
-          overall_notes: overallNotes,
-          faculty_name: facultyName,
-          last_updated: lectureDate,
-          updated_at: new Date().toISOString(),
         });
-        if (progressError) {
-          console.warn('[SyllabusContext] syllabus_progress sync warning:', progressError.message);
-        }
 
-        const { error: historyError } = await supabase.from('syllabus_history').insert({
-          subject_code: subjectCode,
-          title,
-          semester,
-          faculty_name: facultyName,
-          lecture_date: lectureDate,
-          covered_topics: coveredTopics,
-          topic_notes: topicNotes,
-        });
-        if (historyError) {
-          console.warn('[SyllabusContext] syllabus_history sync warning:', historyError.message);
-        }
-
-        const { error: submissionError } = await supabase.from('teacher_submissions').insert({
-          subject_code: subjectCode,
-          lecture_date: lectureDate,
-          covered_topic: coveredTopics,
-          mandatory_note: topicNotes,
-          created_at: new Date().toISOString(),
-        });
-        if (submissionError) {
-          console.warn('[SyllabusContext] teacher_submissions insert warning:', submissionError.message);
-        }
-
+        // 2. Upsert syllabus_progress
         try {
-          const restApiKey =
-            import.meta.env.VITE_SUPABASE_ANON_KEY ||
-            import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
-            import.meta.env.VITE_SUPABASE_SECRET_KEY ||
-            'sb_publishable_EzroXR9eDGtMDlIU4mfLpA_R-C30Uwc';
-
-          await fetch(REST_ENDPOINT, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              apikey: supabaseKey,
-              Authorization: `Bearer ${supabaseKey}`,
-              Prefer: 'return=minimal',
-            },
-            body: JSON.stringify({
-              subject_code: subjectCode,
-              title,
-              semester,
-              faculty_name: facultyName,
-              lecture_date: lectureDate,
-              covered_topic: coveredTopics,
-              mandatory_note: topicNotes,
-              created_at: new Date().toISOString(),
-            }),
+          await upsertSyllabusProgress({
+            subject_code: subjectCode,
+            title,
+            semester,
+            covered_topics: coveredTopics,
+            topic_notes: topicNotes,
+            overall_notes: overallNotes,
+            faculty_name: facultyName,
+            last_updated: lectureDate,
           });
-        } catch (restErr) {
-          console.warn('[SyllabusContext] Direct REST endpoint POST warning:', restErr.message);
+        } catch (progressErr) {
+          console.warn('[SyllabusContext] syllabus_progress sync warning:', progressErr.message);
+        }
+
+        // 3. Insert into syllabus_history
+        try {
+          await insertSyllabusHistory({
+            subject_code: subjectCode,
+            title,
+            semester,
+            faculty_name: facultyName,
+            lecture_date: lectureDate,
+            covered_topics: coveredTopics,
+            topic_notes: topicNotes,
+          });
+        } catch (historyErr) {
+          console.warn('[SyllabusContext] syllabus_history sync warning:', historyErr.message);
+        }
+
+        // 4. Insert into teacher_submissions
+        try {
+          await insertTeacherSubmission({
+            subject_code: subjectCode,
+            lecture_date: lectureDate,
+            covered_topic: coveredTopics,
+            mandatory_note: topicNotes,
+          });
+        } catch (submissionErr) {
+          console.warn('[SyllabusContext] teacher_submissions insert warning:', submissionErr.message);
         }
 
         await refresh();
         return { ok: true, fallback: false };
       } catch (err) {
-        console.error('[SyllabusContext] Supabase write failed, saving locally instead:', err.message);
+        console.error('[SyllabusContext] Backend write failed, saving locally instead:', err.message);
         const next = { ...loadLocal(), [subjectCode]: payload };
         saveLocal(next);
         setState(next);
@@ -208,14 +187,9 @@ export function SyllabusProvider({ children }) {
   );
 
   const fetchHistory = useCallback(async () => {
-    if (!isSupabaseConfigured) return [];
+    if (!isApiConfigured) return [];
     try {
-      const { data, error } = await supabase
-        .from('faculty_lecture_updates')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(50);
-      if (error) throw error;
+      const data = await getLectureHistory();
       return data.map((log) => ({
         code: log.subject_code,
         title: log.title || 'Faculty Lecture Update',

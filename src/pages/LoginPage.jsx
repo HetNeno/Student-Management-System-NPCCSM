@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { isSupabaseConfigured } from '../lib/supabaseClient';
+import { isApiConfigured as isSupabaseConfigured } from '../lib/apiClient';
 
 const ROLES = [
   {
