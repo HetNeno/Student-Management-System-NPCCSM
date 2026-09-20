@@ -13,7 +13,6 @@ export default function StudentOverview() {
 
   const subjects = useMemo(() => getSubjectsForSemester(semester), [semester]);
 
-  // Calculate totals across all subjects in this semester
   const stats = useMemo(() => {
     let totalAllTopics = 0;
     let coveredAllTopics = 0;
@@ -35,7 +34,6 @@ export default function StudentOverview() {
     return { totalAllTopics, coveredAllTopics, notesTotal, overallPct };
   }, [subjects, state]);
 
-  // Recent lecture updates across courses
   const recentUpdates = useMemo(() => {
     const list = [];
     subjects.forEach((sub) => {
@@ -52,185 +50,100 @@ export default function StudentOverview() {
         });
       }
     });
-    return list;
+    return list.slice(0, 4);
   }, [subjects, state]);
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
       <ConnectionBanner show={usingFallback} />
 
-      {/* ── Welcome Banner ── */}
-      <div className="rounded-2xl border border-stone-200/70 bg-white/85 backdrop-blur-md p-5 md:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.02)]">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#8B2635] text-white shadow-md shadow-[#8B2635]/20">
-              <i className="fa-solid fa-graduation-cap text-xl" />
+      <div className="rounded-[28px] border border-slate-200 bg-white/90 p-5 shadow-[0_18px_45px_rgba(15,23,42,0.04)] backdrop-blur-md md:p-6">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-start gap-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#8B2635] text-xl text-white shadow-lg shadow-[#8B2635]/20">
+              <i className="fa-solid fa-graduation-cap" />
             </div>
             <div>
-              <h1 className="text-lg md:text-xl font-black tracking-tight text-stone-900">
-                Welcome back, {user?.name || 'Student'}
-              </h1>
-              <p className="text-xs font-medium text-stone-500 mt-0.5">
-                Semester {semester} &middot; BCA &middot; {subjects.length} Subjects
-              </p>
+              <p className="text-[11px] font-extrabold uppercase tracking-[0.2em] text-slate-400">Academic dashboard</p>
+              <h1 className="mt-1 text-2xl font-black tracking-tight text-slate-900">Welcome back, {user?.name || 'Student'}</h1>
+              <p className="mt-1 text-sm text-slate-500">Semester {semester} • BCA • {subjects.length} active subjects</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2.5">
             <button
               type="button"
               onClick={() => navigate('/student/syllabus')}
-              className="flex items-center gap-2 rounded-xl bg-[#8B2635] px-3.5 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#77212e] transition-all"
+              className="rounded-xl bg-[#8B2635] px-3.5 py-2 text-xs font-bold text-white shadow-sm transition-all hover:bg-[#77212e]"
             >
-              <i className="fa-solid fa-list-check text-xs" />
-              <span>Syllabus</span>
+              <i className="fa-solid fa-list-check mr-2" />
+              Academic Plan
             </button>
             <button
               type="button"
               onClick={() => navigate('/student/career')}
-              className="flex items-center gap-2 rounded-xl border border-stone-300 bg-white px-3.5 py-2 text-xs font-bold text-stone-800 hover:bg-stone-50 transition-all shadow-sm"
+              className="rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-bold text-slate-700 transition-all hover:bg-white"
             >
-              <i className="fa-solid fa-brain text-[#8B2635] text-xs" />
-              <span>Advisor</span>
+              <i className="fa-solid fa-brain mr-2 text-[#8B2635]" />
+              Career Mentor
             </button>
           </div>
         </div>
       </div>
 
-      {/* ── Key Metrics Grid ── */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Semester Progress */}
-        <div className="rounded-2xl border border-stone-200/70 bg-white/85 backdrop-blur-md p-4 shadow-[0_8px_30px_rgb(0,0,0,0.02)] flex flex-col justify-between">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-wider text-stone-400">
-                Completion
-              </p>
-              <p className="mt-1.5 text-2xl font-black text-stone-900">
-                {stats.overallPct}%
-              </p>
-              <p className="text-xs text-stone-500 mt-0.5">
-                {stats.coveredAllTopics} / {stats.totalAllTopics} topics
-              </p>
-            </div>
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-stone-100 text-stone-700">
-              <i className="fa-solid fa-chart-pie text-sm" />
-            </div>
-          </div>
-          <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-stone-100">
-            <div
-              className="h-full rounded-full bg-[#8B2635] transition-all duration-500"
-              style={{ width: `${stats.overallPct}%` }}
-            />
-          </div>
-        </div>
-
-        {/* Enrolled Courses */}
-        <div className="rounded-2xl border border-stone-200/70 bg-white/85 backdrop-blur-md p-4 shadow-[0_8px_30px_rgb(0,0,0,0.02)] flex flex-col justify-between">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-wider text-stone-400">
-                Courses
-              </p>
-              <p className="mt-1.5 text-2xl font-black text-stone-900">
-                {subjects.length}
-              </p>
-              <p className="text-xs text-stone-500 mt-0.5">
-                Semester {semester}
-              </p>
-            </div>
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-stone-100 text-stone-700">
-              <i className="fa-solid fa-book-bookmark text-sm" />
-            </div>
-          </div>
-          <div className="mt-3 flex items-center gap-1 flex-wrap">
-            {subjects.slice(0, 4).map((s) => (
-              <span
-                key={s.code}
-                className="rounded bg-stone-100 px-1.5 py-0.5 text-[10px] font-bold text-stone-600"
-              >
-                {s.code.split('-')[0]}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {/* Published Exam Notes */}
-        <div className="rounded-2xl border border-stone-200/70 bg-white/85 backdrop-blur-md p-4 shadow-[0_8px_30px_rgb(0,0,0,0.02)] flex flex-col justify-between">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-wider text-stone-400">
-                Exam Notes
-              </p>
-              <p className="mt-1.5 text-2xl font-black text-stone-900">
-                {stats.notesTotal}
-              </p>
-              <p className="text-xs text-stone-500 mt-0.5">
-                Key questions
-              </p>
-            </div>
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-stone-100 text-stone-700">
-              <i className="fa-solid fa-file-lines text-sm" />
-            </div>
-          </div>
-          <div className="mt-3">
-            <span
-              className="text-xs font-bold text-[#8B2635] cursor-pointer hover:underline"
-              onClick={() => navigate('/student/resources')}
-            >
-              View notes &rarr;
-            </span>
-          </div>
-        </div>
-
-        {/* Practical Projects */}
-        <div className="rounded-2xl border border-stone-200/70 bg-white/85 backdrop-blur-md p-4 shadow-[0_8px_30px_rgb(0,0,0,0.02)] flex flex-col justify-between">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-wider text-stone-400">
-                Projects
-              </p>
-              <p className="mt-1.5 text-2xl font-black text-stone-900">
-                6
-              </p>
-              <p className="text-xs text-stone-500 mt-0.5">
-                Recommended
-              </p>
-            </div>
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-stone-100 text-stone-700">
-              <i className="fa-solid fa-laptop-code text-sm" />
-            </div>
-          </div>
-          <div className="mt-3">
-            <span
-              className="text-xs font-bold text-[#8B2635] cursor-pointer hover:underline"
-              onClick={() => navigate('/student/projects')}
-            >
-              Explore &rarr;
-            </span>
-          </div>
-        </div>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <MetricCard
+          label="Semester progress"
+          value={`${stats.overallPct}%`}
+          hint={`${stats.coveredAllTopics} / ${stats.totalAllTopics} topics`}
+          icon="fa-solid fa-chart-pie"
+          accent="rose"
+          progress={stats.overallPct}
+        />
+        <MetricCard
+          label="Courses"
+          value={String(subjects.length)}
+          hint={`Semester ${semester}`}
+          icon="fa-solid fa-book-open"
+          accent="slate"
+          progress={60}
+        />
+        <MetricCard
+          label="Exam notes"
+          value={String(stats.notesTotal)}
+          hint="Key topics published"
+          icon="fa-solid fa-file-lines"
+          accent="amber"
+          progress={75}
+        />
+        <MetricCard
+          label="Projects"
+          value="6"
+          hint="Recommended practice"
+          icon="fa-solid fa-laptop-code"
+          accent="emerald"
+          progress={88}
+        />
       </div>
 
-      {/* ── Main Content Columns ── */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        {/* Left: Quick Course Tracker Preview */}
-        <div className="space-y-5 lg:col-span-8">
-          <div className="rounded-2xl border border-stone-200/70 bg-white/85 backdrop-blur-md p-5 shadow-[0_8px_30px_rgb(0,0,0,0.02)]">
-            <div className="flex items-center justify-between border-b border-stone-100 pb-3 mb-4">
-              <h2 className="text-sm font-black text-stone-900">
-                Enrolled Subjects
-              </h2>
+      <div className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
+        <div className="space-y-6">
+          <div className="rounded-[24px] border border-slate-200 bg-white/90 p-5 shadow-[0_12px_30px_rgba(15,23,42,0.03)]">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-400">Academic overview</p>
+                <h2 className="mt-1 text-lg font-black text-slate-900">Subject performance</h2>
+              </div>
               <button
                 type="button"
                 onClick={() => navigate('/student/syllabus')}
                 className="text-xs font-bold text-[#8B2635] hover:underline"
               >
-                Full Syllabus &rarr;
+                View full syllabus →
               </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid gap-3 md:grid-cols-2">
               {subjects.map((sub) => {
                 const subState = state[sub.code];
                 const total = getTotalTopics(sub);
@@ -241,30 +154,20 @@ export default function StudentOverview() {
                   <div
                     key={sub.code}
                     onClick={() => navigate('/student/syllabus')}
-                    className="group cursor-pointer rounded-xl border border-stone-200/70 bg-[#FAF7F5]/50 p-3.5 hover:border-stone-300 hover:bg-white transition-all shadow-sm flex flex-col justify-between"
+                    className="group cursor-pointer rounded-2xl border border-slate-200 bg-slate-50/80 p-4 transition-all hover:border-slate-300 hover:bg-white"
                   >
-                    <div>
-                      <div className="flex items-start justify-between gap-2">
-                        <span className="rounded bg-stone-200/80 px-2 py-0.5 text-[10px] font-bold text-stone-700">
-                          {sub.code}
-                        </span>
-                        <span className="text-xs font-black text-stone-900">
-                          {pct}%
-                        </span>
-                      </div>
-                      <h3 className="mt-2 text-xs font-bold text-stone-900 group-hover:text-[#8B2635] transition-colors line-clamp-1">
-                        {sub.title}
-                      </h3>
-                      <p className="text-[11px] text-stone-400 mt-0.5">
-                        {covered} / {total} topics
-                      </p>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="rounded-lg bg-[#8B2635]/10 px-2 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-[#8B2635]">
+                        {sub.code}
+                      </span>
+                      <span className="text-sm font-black text-slate-900">{pct}%</span>
                     </div>
 
-                    <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-stone-200/80">
-                      <div
-                        className="h-full rounded-full bg-[#8B2635] transition-all duration-500"
-                        style={{ width: `${pct}%` }}
-                      />
+                    <h3 className="mt-3 text-sm font-bold text-slate-800">{sub.title}</h3>
+                    <p className="mt-1 text-[11px] text-slate-500">{covered} of {total} topics covered</p>
+
+                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200">
+                      <div className="h-full rounded-full bg-gradient-to-r from-[#8B2635] to-[#b85f65] transition-all duration-500" style={{ width: `${pct}%` }} />
                     </div>
                   </div>
                 );
@@ -272,93 +175,136 @@ export default function StudentOverview() {
             </div>
           </div>
 
-          {/* Quick Hub Navigation Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="rounded-2xl border border-stone-200/70 bg-white/85 backdrop-blur-md p-4 shadow-[0_8px_30px_rgb(0,0,0,0.02)] flex flex-col justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-stone-100 text-stone-800">
-                  <i className="fa-solid fa-brain text-sm" />
-                </div>
-                <div>
-                  <h3 className="text-xs font-black text-stone-900">Career Advisor AI</h3>
-                  <p className="text-[11px] text-stone-400">Placement &amp; interview tips</p>
-                </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="rounded-[24px] border border-slate-200 bg-white/90 p-5 shadow-[0_12px_30px_rgba(15,23,42,0.03)]">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-black text-slate-900">Quick access</h3>
+                <i className="fa-solid fa-bolt text-xs text-[#8B2635]" />
               </div>
-              <button
-                type="button"
-                onClick={() => navigate('/student/career')}
-                className="mt-3 text-xs font-bold text-[#8B2635] hover:underline text-left"
-              >
-                Open Advisor &rarr;
-              </button>
+
+              <div className="mt-4 space-y-3">
+                <QuickAction icon="fa-solid fa-brain" label="Career mentor" desc="Placement guidance" onClick={() => navigate('/student/career')} />
+                <QuickAction icon="fa-solid fa-laptop-code" label="Projects" desc="Hands-on practice" onClick={() => navigate('/student/projects')} />
+                <QuickAction icon="fa-solid fa-box-archive" label="Resources" desc="Notes and materials" onClick={() => navigate('/student/resources')} />
+              </div>
             </div>
 
-            <div className="rounded-2xl border border-stone-200/70 bg-white/85 backdrop-blur-md p-4 shadow-[0_8px_30px_rgb(0,0,0,0.02)] flex flex-col justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-stone-100 text-stone-800">
-                  <i className="fa-solid fa-laptop-code text-sm" />
-                </div>
-                <div>
-                  <h3 className="text-xs font-black text-stone-900">Practical Projects</h3>
-                  <p className="text-[11px] text-stone-400">Portfolio exercises</p>
-                </div>
+            <div className="rounded-[24px] border border-slate-200 bg-white/90 p-5 shadow-[0_12px_30px_rgba(15,23,42,0.03)]">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-black text-slate-900">This week</h3>
+                <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">Agenda</span>
               </div>
-              <button
-                type="button"
-                onClick={() => navigate('/student/projects')}
-                className="mt-3 text-xs font-bold text-[#8B2635] hover:underline text-left"
-              >
-                Open Projects &rarr;
-              </button>
+
+              <div className="mt-4 space-y-3 text-sm">
+                <AgendaItem time="09:00" title="Data Structures lecture" detail="Room A-12" />
+                <AgendaItem time="11:30" title="Web development lab" detail="Project work" />
+                <AgendaItem time="15:00" title="Career mentorship" detail="Resume review" />
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Right: Recent Faculty Lecture Feed */}
-        <div className="space-y-4 lg:col-span-4">
-          <div className="rounded-2xl border border-stone-200/70 bg-white/85 backdrop-blur-md p-5 shadow-[0_8px_30px_rgb(0,0,0,0.02)]">
-            <div className="flex items-center justify-between border-b border-stone-100 pb-3 mb-3">
-              <h2 className="text-xs font-black uppercase tracking-wider text-stone-900">
-                Recent Lectures
-              </h2>
-              <span className="text-[10px] font-bold text-stone-400">
-                Live
-              </span>
+        <div className="space-y-6">
+          <div className="rounded-[24px] border border-slate-200 bg-white/90 p-5 shadow-[0_12px_30px_rgba(15,23,42,0.03)]">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-sm font-black text-slate-900">Recent updates</h3>
+              <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">Live</span>
             </div>
 
             {loading ? (
-              <div className="py-6 text-center text-xs text-stone-400">Loading...</div>
+              <div className="py-6 text-center text-xs text-slate-400">Loading updates...</div>
             ) : recentUpdates.length === 0 ? (
-              <div className="py-6 text-center text-xs text-stone-400">
-                No recent updates.
-              </div>
+              <div className="py-6 text-center text-xs text-slate-400">No academic updates yet.</div>
             ) : (
-              <div className="space-y-2.5">
+              <div className="space-y-3">
                 {recentUpdates.map((item) => (
-                  <div
-                    key={item.subjectCode}
-                    className="rounded-xl border border-stone-200/70 bg-[#FAF7F5]/50 p-3 space-y-1.5"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold text-stone-600">
-                        {item.subjectCode}
-                      </span>
-                      <span className="text-[10px] text-stone-400">
-                        {item.lastUpdated}
-                      </span>
+                  <div key={item.subjectCode} className="rounded-2xl border border-slate-200 bg-slate-50/80 p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">{item.subjectCode}</span>
+                      <span className="text-[10px] text-slate-400">{item.lastUpdated}</span>
                     </div>
-                    <p className="text-xs font-bold text-stone-900 line-clamp-1">
-                      {item.latestTopic}
-                    </p>
-                    <p className="text-[10px] text-stone-400">
-                      {item.faculty}
-                    </p>
+                    <p className="mt-2 text-sm font-bold text-slate-800">{item.latestTopic}</p>
+                    <p className="mt-1 text-[11px] text-slate-500">{item.faculty}</p>
                   </div>
                 ))}
               </div>
             )}
           </div>
+
+          <div className="rounded-[24px] border border-slate-200 bg-gradient-to-br from-[#8B2635] to-[#A93F49] p-5 text-white shadow-[0_18px_40px_rgba(139,38,53,0.22)]">
+            <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-white/75">Focus</p>
+            <h3 className="mt-2 text-xl font-black">Strong academic momentum</h3>
+            <p className="mt-2 text-sm text-white/80">Keep your syllabus coverage aligned to weekly goals and upcoming assessments.</p>
+            <button
+              type="button"
+              onClick={() => navigate('/student/projects')}
+              className="mt-4 rounded-xl bg-white px-3.5 py-2 text-xs font-bold text-[#8B2635]"
+            >
+              Continue learning
+            </button>
+          </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function MetricCard({ label, value, hint, icon, accent, progress }) {
+  const tones = {
+    rose: { bg: 'bg-[#8B2635]/10', text: 'text-[#8B2635]' },
+    slate: { bg: 'bg-slate-100', text: 'text-slate-700' },
+    amber: { bg: 'bg-amber-100', text: 'text-amber-700' },
+    emerald: { bg: 'bg-emerald-100', text: 'text-emerald-700' },
+  };
+
+  const theme = tones[accent] || tones.rose;
+
+  return (
+    <div className="rounded-[22px] border border-slate-200 bg-white/90 p-4 shadow-[0_12px_30px_rgba(15,23,42,0.03)]">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-slate-400">{label}</p>
+          <p className="mt-2 text-3xl font-black tracking-tight text-slate-900">{value}</p>
+          <p className="mt-1 text-[11px] text-slate-500">{hint}</p>
+        </div>
+        <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${theme.bg} ${theme.text}`}>
+          <i className={icon} />
+        </div>
+      </div>
+      <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-200">
+        <div className="h-full rounded-full bg-gradient-to-r from-[#8B2635] to-[#b85f65]" style={{ width: `${progress}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function QuickAction({ icon, label, desc, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 text-left transition-all hover:border-slate-300 hover:bg-white"
+    >
+      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#8B2635]/10 text-[#8B2635]">
+        <i className={icon} />
+      </div>
+      <div>
+        <p className="text-sm font-bold text-slate-800">{label}</p>
+        <p className="text-[11px] text-slate-500">{desc}</p>
+      </div>
+    </button>
+  );
+}
+
+function AgendaItem({ time, title, detail }) {
+  return (
+    <div className="flex gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#8B2635]/10 text-[10px] font-black text-[#8B2635]">
+        {time}
+      </div>
+      <div>
+        <p className="text-sm font-bold text-slate-800">{title}</p>
+        <p className="text-[11px] text-slate-500">{detail}</p>
       </div>
     </div>
   );
