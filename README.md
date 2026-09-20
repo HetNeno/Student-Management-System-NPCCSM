@@ -151,7 +151,11 @@ npccsm-react/
 │   ├── hooks/
 │   │   └── useReminderScheduler.js
 │   │   └── ...
-│   ├── lib/
+│   ├── cd "D:\collage project\npccsm-react"
+
+git add .gitignore
+git commit -m "Add project gitignore rules"
+git push -u origin masterlib/
 │   │   ├── apiClient.js
 │   │   └── chatbotApi.js
 │   ├── pages/
