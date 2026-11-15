@@ -1,4 +1,4 @@
-# NPCCSM Academic Portal
+# NPCCSM Academic Portal - Student-Management-System-NPCCSM-
 
 A modern academic portal for students, teachers, and administrators. The project provides a role-based academic dashboard where students can track semester progress, access syllabus content, explore career guidance, manage learning resources, and work on practical projects. It also includes a backend-driven RAG assistant for academic support and a server for document processing and retrieval.
 
