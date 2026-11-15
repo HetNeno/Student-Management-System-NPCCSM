@@ -1,0 +1,28 @@
+node_modules
+dist
+.env
+.DS_Store
+server/node_modules
+server/.env
+
+# Local environment files
+.env.*
+!.env.example
+
+# Logs and debug output
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Local caches and editor files
+.cache
+.vite
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Runtime uploads and generated files
+server/uploads/*
+!server/uploads/.gitkeep
