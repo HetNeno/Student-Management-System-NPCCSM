@@ -16,7 +16,7 @@ class SyllabusHistory extends Model
             'covered_topics' => 'array',
             'topic_notes' => 'array',
             'semester' => 'integer',
-            'lecture_date' => 'date',
+            'lecture_date' => 'date:Y-m-d',
             'created_at' => 'datetime',
         ];
     }

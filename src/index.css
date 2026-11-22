@@ -818,3 +818,49 @@ main > .scroll-reveal.reveal-visible {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* ============================================
+   Portal motion (subtle; disabled for reduced motion)
+   ============================================ */
+.chat-message-in { animation: messageIn 280ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.list-row-in     { animation: riseUp 360ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.chat-panel-in   { animation: fadeInScale 260ms cubic-bezier(0.16, 1, 0.3, 1) both; transform-origin: bottom right; }
+
+@keyframes fabFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+.fab-float { animation: fabFloat 3.2s ease-in-out infinite; }
+
+html { scroll-behavior: smooth; }
+
+:focus-visible {
+  outline: 2px solid #A52A2A;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Nova bot avatar ── */
+@keyframes novaBlink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.1); } }
+@keyframes novaScan { 0%, 100% { transform: translateX(-1.2px); } 50% { transform: translateX(1.2px); } }
+@keyframes novaAntenna { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+@keyframes novaHalo { 0% { box-shadow: 0 0 0 0 rgba(139, 38, 53, 0.45); } 100% { box-shadow: 0 0 0 10px rgba(139, 38, 53, 0); } }
+.nova-avatar .nova-eyes { transform-origin: 16px 16px; animation: novaBlink 4.5s ease-in-out infinite; }
+.nova-avatar.is-thinking .nova-eyes { animation: novaScan 0.9s ease-in-out infinite; }
+.nova-avatar.is-thinking .nova-antenna { animation: novaAntenna 0.8s ease-in-out infinite; }
+.nova-halo { animation: novaHalo 1.4s ease-out infinite; }
+
+@keyframes caretBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+.type-caret::after { content: '▍'; margin-left: 1px; color: #8B2635; animation: caretBlink 0.9s steps(1) infinite; }
+
+@keyframes stageIn { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
+.stage-in { animation: stageIn 240ms ease-out both; }

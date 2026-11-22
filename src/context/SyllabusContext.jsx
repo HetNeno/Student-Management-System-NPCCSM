@@ -7,6 +7,7 @@ import {
   insertTeacherSubmission,
   getLectureHistory,
 } from '../lib/apiClient';
+import { useAuth } from './AuthContext';
 
 const POLL_INTERVAL_MS = 30_000; // Poll every 30 seconds (replaces Supabase Realtime)
 const SyllabusContext = createContext(null);
@@ -28,6 +29,8 @@ const normalizeLectureRow = (row) => ({
  * The Laravel API backed by MySQL is the source of truth.
  */
 export function SyllabusProvider({ children }) {
+  const { user } = useAuth();
+  const userId = user?.id || null;
   const [state, setState] = useState({});
   const [loading, setLoading] = useState(true);
   const [usingFallback, setUsingFallback] = useState(false);
@@ -58,8 +61,13 @@ export function SyllabusProvider({ children }) {
     }
   }, []);
 
-  // Initial load + polling (replaces Supabase Realtime channel)
+  // Initial load + polling, only while signed in (the API requires a session).
   useEffect(() => {
+    if (!userId) {
+      setState({});
+      setLoading(false);
+      return undefined;
+    }
     refresh();
 
     // Poll for changes every POLL_INTERVAL_MS
@@ -70,7 +78,7 @@ export function SyllabusProvider({ children }) {
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
     };
-  }, [refresh]);
+  }, [refresh, userId]);
 
   const publishUpdate = useCallback(
     async ({ subjectCode, title, semester, coveredTopics, topicNotes, overallNotes, lectureDate, facultyName }) => {

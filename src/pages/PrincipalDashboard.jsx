@@ -4,6 +4,8 @@ import ConnectionBanner from '../components/shared/ConnectionBanner';
 import { getSubjectsForSemester, getTotalTopics } from '../data/syllabusDatabase';
 import { useSyllabus } from '../context/SyllabusContext';
 import Button from '../components/shared/Button';
+import AccountsPanel from '../components/principal/AccountsPanel';
+import AssistantPanel from '../components/principal/AssistantPanel';
 
 export default function PrincipalDashboard() {
   const [semester, setSemester] = useState(5);
@@ -30,7 +32,18 @@ export default function PrincipalDashboard() {
 
   return (
     <div className="principal-shell relative z-10 flex min-h-screen flex-col">
-      <Header icon="fas fa-building-columns" title="Principal Dashboard" accent="indigo" semester={semester} onSemesterChange={setSemester} />
+      <Header
+        icon="fas fa-building-columns"
+        title="Principal Dashboard"
+        accent="indigo"
+        semester={semester}
+        onSemesterChange={setSemester}
+        links={[
+          { to: '/principal', label: 'Dashboard', icon: 'fa-solid fa-gauge' },
+          { to: '/principal/projects', label: 'Projects', icon: 'fa-solid fa-laptop-code' },
+          { to: '/principal/content', label: 'Materials', icon: 'fa-solid fa-folder-open' },
+        ]}
+      />
 
       <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col space-y-5 p-4 md:p-6 lg:p-8">
         <ConnectionBanner show={usingFallback} />
@@ -132,6 +145,10 @@ export default function PrincipalDashboard() {
               })}
             </div>
           )}
+        </div>
+        <div className="grid gap-5 xl:grid-cols-[1.6fr_1fr]">
+          <AccountsPanel />
+          <AssistantPanel />
         </div>
       </main>
     </div>

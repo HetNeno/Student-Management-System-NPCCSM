@@ -1,3 +1,5 @@
+> **Historical document.** Written before the MySQL/Groq rework. Current state: [../docs/architecture.md](../docs/architecture.md).
+
 # NPCCSM Migration Analysis
 
 ## Scope and source
@@ -99,3 +101,4 @@ Frontend dependencies are React, React DOM, React Router, Motion, Vite, Tailwind
 - The original frontend build was attempted; it could not start because Vite is not installed (`'vite' is not recognized`). No claim is made that the original build passes.
 - No local database credentials or database copy are present in the workspace; database integration tests and backup/cutover require a user-provided test PostgreSQL instance.
 - Production Gemini model availability, credentials, PDF edge cases, and deployment host remain environment-dependent.
+

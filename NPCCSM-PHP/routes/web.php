@@ -1,36 +1,23 @@
 <?php
 
-use App\Http\Controllers\Auth\AuthenticatedSessionController;
-use App\Http\Controllers\Student\StudentDashboardController;
-use App\Http\Controllers\Teacher\TeacherDashboardController;
-use App\Http\Controllers\Principal\PrincipalDashboardController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', fn () => view('landing'))->name('landing');
+/*
+| The React SPA (repo root `src/`) is the only UI.
+|  - Development: Vite serves it on :3000 and proxies /api to this app.
+|  - Production:  `npm run build` writes it to public/spa; every non-API path
+|    returns its index.html and React Router renders the page. Access control
+|    is enforced by the /api routes, not by which HTML is served.
+*/
+$spa = function () {
+    $index = public_path('spa/index.html');
 
-Route::middleware('guest')->group(function (): void {
-    Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
-    Route::post('/login', [AuthenticatedSessionController::class, 'store'])
-        ->middleware('throttle:5,1')
-        ->name('login.store');
-});
+    abort_unless(is_file($index), 503, 'Frontend not built. Run `npm run build` in the project root, or use the Vite dev server on port 3000.');
 
-Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
-    ->middleware('auth')
-    ->name('logout');
+    return response()->file($index, ['Cache-Control' => 'no-cache']);
+};
 
-Route::prefix('student')->name('student.')->middleware(['auth', 'role:student'])->group(function (): void {
-    Route::get('/', [StudentDashboardController::class, 'index'])->name('overview');
-    Route::view('/syllabus', 'student.syllabus')->name('syllabus');
-    Route::view('/career', 'student.career')->name('career');
-    Route::view('/projects', 'student.projects')->name('projects');
-    Route::view('/resources', 'student.resources')->name('resources');
-});
+// Named so Laravel's auth helpers can resolve route('login').
+Route::get('/login', $spa)->name('login');
 
-Route::prefix('teacher')->name('teacher.')->middleware(['auth', 'role:teacher'])->group(function (): void {
-    Route::get('/', [TeacherDashboardController::class, 'index'])->name('dashboard');
-});
-
-Route::prefix('principal')->name('principal.')->middleware(['auth', 'role:principal'])->group(function (): void {
-    Route::get('/', [PrincipalDashboardController::class, 'index'])->name('dashboard');
-});
+Route::get('/{path?}', $spa)->where('path', '^(?!api/|up$|spa/).*$')->name('spa');

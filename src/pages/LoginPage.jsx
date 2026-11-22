@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import BrandLogo from '../components/shared/BrandLogo';
 
 const ROLES = [
   {
@@ -64,8 +65,9 @@ export default function LoginPage() {
   const { login, user } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [activeRole, setActiveRole] = useState('student');
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [remember, setRemember] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -99,9 +101,15 @@ export default function LoginPage() {
     setErrorMsg('');
     setSubmitting(true);
     try {
-      const result = await login({ username, password, role: activeRole });
+      // The role tabs only change the page's hints. The account's real role
+      // comes from the server and decides the dashboard.
+      const result = await login({ email, password, remember });
       if (!result.success) {
         setErrorMsg(result.error);
+      } else {
+        const from = location.state?.from?.pathname;
+        const home = result.redirect || '/student';
+        navigate(from && from.startsWith(home) ? from : home, { replace: true });
       }
     } catch (err) {
       setErrorMsg('An unexpected error occurred. Please try again.');
@@ -130,18 +138,9 @@ export default function LoginPage() {
                 mounted ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
               }`}
             >
-              <div className="flex items-center gap-4 mb-6">
-                <div
-                  className="flex h-14 w-14 items-center justify-center rounded-2xl shadow-lg text-white"
-                  style={{ background: 'linear-gradient(135deg, #A52A2A, #B24848)' }}
-                >
-                  <i className="fas fa-graduation-cap text-2xl" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold tracking-tight" style={{ color: '#1E293B' }}>NPCCSM</h2>
-                  <p className="text-xs font-medium" style={{ color: '#94A3B8' }}>Academic Command Center</p>
-                </div>
-              </div>
+              <Link to="/" className="mb-6 inline-block" aria-label="NPCCSM portal home">
+                <BrandLogo className="h-14 sm:h-16" framed />
+              </Link>
             </div>
 
             {/* Main Heading */}
@@ -214,13 +213,14 @@ export default function LoginPage() {
                 </div>
 
                 {/* Role Selector */}
-                <div className="mb-6 grid grid-cols-3 gap-2">
+                <div className="mb-6 grid grid-cols-3 gap-2" role="group" aria-label="Choose your portal">
                   {ROLES.map((role) => {
                     const isActive = role.id === activeRole;
                     return (
                       <button
                         key={role.id}
                         type="button"
+                        aria-pressed={isActive}
                         onClick={() => handleRoleChange(role.id)}
                         className={`group rounded-xl border-2 p-3 text-center transition-all duration-200 ${
                           isActive
@@ -253,9 +253,16 @@ export default function LoginPage() {
                   })}
                 </div>
 
+                {!errorMsg && (location.state?.error || location.state?.message) && (
+                  <div role="status" className="mb-4 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                    <i className="fas fa-circle-info mt-0.5" />
+                    <span>{location.state.error || location.state.message}</span>
+                  </div>
+                )}
+
                 {/* Error Message */}
                 {errorMsg && (
-                  <div className="mb-4 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700" style={{ animation: 'shake 0.5s ease-in-out' }}>
+                  <div role="alert" className="mb-4 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700" style={{ animation: 'shake 0.5s ease-in-out' }}>
                     <i className="fas fa-exclamation-circle mt-0.5 text-red-500" />
                     <span>{errorMsg}</span>
                   </div>
@@ -263,21 +270,23 @@ export default function LoginPage() {
 
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  {/* Username Input */}
+                  {/* Email Input */}
                   <div>
-                    <label className="mb-2 block text-xs font-bold uppercase tracking-wider" style={{ color: '#64748B' }}>
-                      Username
+                    <label htmlFor="login-email" className="mb-2 block text-xs font-bold uppercase tracking-wider" style={{ color: '#64748B' }}>
+                      Email address
                     </label>
                     <div className="relative">
                       <span className="pointer-events-none absolute inset-y-0 left-4 flex items-center" style={{ color: '#94A3B8' }}>
-                        <i className="fas fa-user text-sm" />
+                        <i className="fas fa-envelope text-sm" />
                       </span>
                       <input
-                        type="text"
+                        id="login-email"
+                        type="email"
                         required
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        placeholder={`${selectedRoleConfig.label} username`}
+                        autoComplete="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder={`${selectedRoleConfig.label.toLowerCase()}@example.com`}
                         className="w-full rounded-xl border py-3.5 pl-11 pr-4 text-sm outline-none transition-all duration-200"
                         style={{
                           background: '#F8FAFC',
@@ -308,8 +317,11 @@ export default function LoginPage() {
                         <i className="fas fa-lock text-sm" />
                       </span>
                       <input
+                        id="login-password"
+                        aria-label="Password"
                         type={showPassword ? 'text' : 'password'}
                         required
+                        autoComplete="current-password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="Enter password"
@@ -332,6 +344,7 @@ export default function LoginPage() {
                       />
                       <button
                         type="button"
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
                         onClick={() => setShowPassword((prev) => !prev)}
                         className="absolute inset-y-0 right-4 flex items-center transition-colors hover:text-opacity-80"
                         style={{ color: '#94A3B8' }}
@@ -340,6 +353,16 @@ export default function LoginPage() {
                       </button>
                     </div>
                   </div>
+
+                  <label className="flex items-center gap-2 text-xs font-semibold text-slate-500 select-none">
+                    <input
+                      type="checkbox"
+                      checked={remember}
+                      onChange={(e) => setRemember(e.target.checked)}
+                      className="h-4 w-4 rounded border-slate-300 accent-[#A52A2A]"
+                    />
+                    Keep me signed in on this device
+                  </label>
 
                   {/* Submit Button */}
                   <button
@@ -364,6 +387,20 @@ export default function LoginPage() {
                   </button>
                 </form>
 
+                <div className="mt-6 border-t border-slate-100 pt-5 text-center text-sm text-slate-500">
+                  {activeRole === 'student' ? (
+                    <>
+                      New student?{' '}
+                      <Link to="/signup" className="font-bold text-[#A52A2A] hover:underline">
+                        Create your account
+                      </Link>
+                    </>
+                  ) : (
+                    <span>
+                      {selectedRoleConfig.label} accounts are created by the principal. Contact the college office if you need access.
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           </div>

@@ -1,197 +1,92 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\AcademicController;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ProjectController;
+use App\Http\Controllers\Api\LearningContentController;
 use App\Http\Controllers\Api\RagController;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
+use App\Http\Controllers\Api\StudyController;
+use App\Http\Controllers\Api\UserManagementController;
+use Illuminate\Support\Facades\Route;
 
-Route::get('/health', fn () => response()->json([
-    'status' => 'ok',
-    'timestamp' => now()->toIso8601String(),
-]));
+/*
+| All routes here run with session + CSRF (see bootstrap/app.php) and always
+| return JSON. Authorisation is enforced here, not in React.
+*/
 
-Route::post('/auth/login', function (Request $request) {
-    $validated = $request->validate([
-        'username' => ['required', 'string', 'max:255'],
-        'password' => ['required', 'string'],
-        'role' => ['required', Rule::in(['student', 'teacher', 'principal'])],
-    ]);
+Route::get('/health', fn () => response()->json(['status' => 'ok', 'timestamp' => now()->toIso8601String()]));
 
-    $user = App\Models\User::query()
-        ->whereRaw('LOWER(username) = LOWER(?)', [$validated['username']])
-        ->where('role', $validated['role'])
-        ->first();
-
-    if (! $user || ! Hash::check($validated['password'], $user->password)) {
-        return response()->json(['error' => 'Invalid username or password.'], 401);
-    }
-
-    Auth::login($user);
-    $request->session()->regenerate();
-
-    return response()->json([
-        'id' => $user->id,
-        'username' => $user->username,
-        'role' => $user->role,
-        'name' => $user->name,
-        'department' => $user->department,
-    ]);
+// ── Authentication ──────────────────────────────────────────────────────────
+Route::prefix('auth')->group(function (): void {
+    Route::get('/csrf', [AuthController::class, 'csrf']);
+    Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:register');
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
+    Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth');
+    Route::get('/me', [AuthController::class, 'me'])->middleware(['auth', 'active']);
 });
 
-Route::post('/auth/logout', function (Request $request) {
-    Auth::logout();
-    $request->session()->invalidate();
-    $request->session()->regenerateToken();
-    return response()->json(['status' => 'ok']);
-});
+Route::middleware(['auth', 'active'])->group(function (): void {
+    // ── Curriculum & coverage (all roles read, staff write) ────────────────
+    Route::get('/courses', [AcademicController::class, 'courses']);
+    Route::get('/faculty-lecture-updates', [AcademicController::class, 'lectureUpdates']);
+    Route::get('/faculty-lecture-updates/history', [AcademicController::class, 'lectureHistory']);
 
-Route::get('/auth/me', function (Request $request) {
-    $user = $request->user();
+    Route::middleware('role:teacher,principal')->group(function (): void {
+        Route::post('/faculty-lecture-updates', [AcademicController::class, 'storeLectureUpdate']);
+        Route::post('/syllabus-progress', [AcademicController::class, 'upsertProgress']);
+        Route::post('/syllabus-history', [AcademicController::class, 'storeHistory']);
+        Route::post('/teacher-submissions', [AcademicController::class, 'storeSubmission']);
+    });
 
-    if (! $user) {
-        return response()->json(['error' => 'Unauthenticated.'], 401);
-    }
+    // ── Projects ────────────────────────────────────────────────────────────
+    Route::get('/projects', [ProjectController::class, 'index']);
+    Route::get('/projects/{project}', [ProjectController::class, 'show']);
 
-    return response()->json([
-        'user' => [
-            'id' => $user->id,
-            'username' => $user->username,
-            'role' => $user->role,
-            'name' => $user->name,
-            'department' => $user->department,
-        ],
-    ]);
-})->middleware('auth');
+    Route::middleware('role:student')->group(function (): void {
+        Route::post('/projects/{project}/enrollment', [ProjectController::class, 'enroll']);
+        Route::delete('/projects/{project}/enrollment', [ProjectController::class, 'unenroll']);
+        Route::patch('/projects/{project}/enrollment', [ProjectController::class, 'updateProgress']);
+    });
 
-Route::middleware(['auth', 'role:student,teacher,principal'])->group(function (): void {
-    Route::get('/faculty-lecture-updates', fn () => response()->json(
-        DB::table('faculty_lecture_updates')->orderByDesc('created_at')->get()
-    ));
+    Route::middleware('role:teacher,principal')->group(function (): void {
+        Route::post('/projects', [ProjectController::class, 'store']);
+        Route::patch('/projects/{project}', [ProjectController::class, 'update']);
+    });
+    Route::delete('/projects/{project}', [ProjectController::class, 'destroy'])->middleware('role:principal');
 
-    Route::get('/faculty-lecture-updates/history', fn () => response()->json(
-        DB::table('faculty_lecture_updates')->orderByDesc('created_at')->limit(50)->get()
-    ));
+    // ── Study materials & notices (students: own semester only) ────────────
+    Route::get('/materials', [LearningContentController::class, 'materials']);
+    Route::get('/materials/{material}/download', [LearningContentController::class, 'downloadMaterial']);
+    Route::get('/notices', [LearningContentController::class, 'notices']);
 
-    Route::post('/faculty-lecture-updates', function (Request $request) {
-        $validated = $request->validate([
-            'subject_code' => ['required', 'string', 'max:255'],
-            'title' => ['required', 'string', 'max:255'],
-            'semester' => ['required', 'integer', 'between:1,8'],
-            'faculty_name' => ['nullable', 'string', 'max:255'],
-            'lecture_date' => ['nullable', 'date'],
-            'covered_topic' => ['array'],
-            'mandatory_note' => ['array'],
-        ]);
+    Route::middleware('role:teacher,principal')->group(function (): void {
+        Route::post('/materials', [LearningContentController::class, 'storeMaterial']);
+        Route::delete('/materials/{material}', [LearningContentController::class, 'destroyMaterial']);
+        Route::post('/notices', [LearningContentController::class, 'storeNotice']);
+        Route::delete('/notices/{notice}', [LearningContentController::class, 'destroyNotice']);
+    });
 
-        abort_unless($request->user()->role !== 'student', 403);
+    // ── Student revision tracker ────────────────────────────────────────────
+    Route::middleware('role:student')->group(function (): void {
+        Route::get('/study/revisions', [StudyController::class, 'revisions']);
+        Route::post('/study/revisions', [StudyController::class, 'toggleRevision']);
+    });
 
-        $id = (string) Str::uuid();
-        DB::table('faculty_lecture_updates')->insert([
-            'id' => $id,
-            'subject_code' => $validated['subject_code'],
-            'title' => $validated['title'],
-            'semester' => $validated['semester'],
-            'faculty_name' => $validated['faculty_name'] ?? $request->user()->name,
-            'lecture_date' => $validated['lecture_date'] ?? now()->toDateString(),
-            'covered_topic' => json_encode($validated['covered_topic'] ?? [], JSON_UNESCAPED_UNICODE),
-            'mandatory_note' => json_encode($validated['mandatory_note'] ?? [], JSON_UNESCAPED_UNICODE),
-            'created_at' => now(),
-        ]);
+    // ── AI assistant (Groq + MySQL retrieval) ──────────────────────────────
+    Route::post('/rag/query', [RagController::class, 'query'])->middleware('throttle:ai');
 
-        return response()->json(
-            DB::table('faculty_lecture_updates')->where('id', $id)->first(),
-            201
-        );
-    })->middleware('role:teacher,principal');
+    Route::middleware('role:principal')->group(function (): void {
+        Route::get('/rag/stats', [RagController::class, 'stats']);
+        Route::get('/rag/jobs', [RagController::class, 'jobs']);
+        Route::post('/rag/ingest/text', [RagController::class, 'ingestText']);
+        Route::post('/rag/ingest/pdf', [RagController::class, 'ingestPdf']);
+        Route::post('/rag/ingest/syllabus', [RagController::class, 'ingestSyllabus']);
+        Route::delete('/rag/reset', [RagController::class, 'reset']);
 
-    Route::post('/syllabus-progress', function (Request $request) {
-        $validated = $request->validate([
-            'subject_code' => ['required', 'string', 'max:255'],
-            'title' => ['required', 'string', 'max:255'],
-            'semester' => ['required', 'integer', 'between:1,8'],
-            'covered_topics' => ['array'],
-            'topic_notes' => ['array'],
-            'overall_notes' => ['nullable', 'string'],
-            'faculty_name' => ['nullable', 'string', 'max:255'],
-            'last_updated' => ['nullable', 'date'],
-        ]);
-        abort_unless($request->user()->role !== 'student', 403);
-
-        DB::table('syllabus_progress')->updateOrInsert(
-            ['subject_code' => $validated['subject_code']],
-            [
-                'title' => $validated['title'],
-                'semester' => $validated['semester'],
-                'covered_topics' => json_encode($validated['covered_topics'] ?? [], JSON_UNESCAPED_UNICODE),
-                'topic_notes' => json_encode($validated['topic_notes'] ?? [], JSON_UNESCAPED_UNICODE),
-                'overall_notes' => $validated['overall_notes'] ?? null,
-                'faculty_name' => $validated['faculty_name'] ?? null,
-                'last_updated' => $validated['last_updated'] ?? null,
-                'updated_at' => now(),
-            ]
-        );
-
-        return response()->json(
-            DB::table('syllabus_progress')->where('subject_code', $validated['subject_code'])->first()
-        );
-    })->middleware('role:teacher,principal');
-
-    Route::post('/syllabus-history', function (Request $request) {
-        $validated = $request->validate([
-            'subject_code' => ['required', 'string', 'max:255'],
-            'title' => ['required', 'string', 'max:255'],
-            'semester' => ['required', 'integer', 'between:1,8'],
-            'faculty_name' => ['nullable', 'string', 'max:255'],
-            'lecture_date' => ['nullable', 'date'],
-            'covered_topics' => ['array'],
-            'topic_notes' => ['array'],
-        ]);
-        abort_unless($request->user()->role !== 'student', 403);
-
-        $id = DB::table('syllabus_history')->insertGetId([
-            'subject_code' => $validated['subject_code'],
-            'title' => $validated['title'],
-            'semester' => $validated['semester'],
-            'faculty_name' => $validated['faculty_name'] ?? null,
-            'lecture_date' => $validated['lecture_date'] ?? null,
-            'covered_topics' => json_encode($validated['covered_topics'] ?? [], JSON_UNESCAPED_UNICODE),
-            'topic_notes' => json_encode($validated['topic_notes'] ?? [], JSON_UNESCAPED_UNICODE),
-            'created_at' => now(),
-        ]);
-
-        return response()->json(DB::table('syllabus_history')->where('id', $id)->first(), 201);
-    })->middleware('role:teacher,principal');
-
-    Route::post('/teacher-submissions', function (Request $request) {
-        $validated = $request->validate([
-            'subject_code' => ['required', 'string', 'max:255'],
-            'lecture_date' => ['nullable', 'date'],
-            'covered_topic' => ['array'],
-            'mandatory_note' => ['array'],
-        ]);
-        $id = (string) Str::uuid();
-        DB::table('teacher_submissions')->insert([
-            'id' => $id,
-            'subject_code' => $validated['subject_code'],
-            'lecture_date' => $validated['lecture_date'] ?? null,
-            'covered_topic' => json_encode($validated['covered_topic'] ?? [], JSON_UNESCAPED_UNICODE),
-            'mandatory_note' => json_encode($validated['mandatory_note'] ?? [], JSON_UNESCAPED_UNICODE),
-            'created_at' => now(),
-        ]);
-        return response()->json(DB::table('teacher_submissions')->where('id', $id)->first(), 201);
-    })->middleware('role:teacher,principal');
-
-    Route::post('/rag/query', [RagController::class, 'query']);
-    Route::get('/rag/stats', [RagController::class, 'stats']);
-    Route::get('/rag/jobs', [RagController::class, 'jobs']);
-    Route::post('/rag/ingest/text', [RagController::class, 'ingestText'])
-        ->middleware('role:principal');
-    Route::post('/rag/ingest/pdf', [RagController::class, 'ingestPdf'])
-        ->middleware('role:principal');
-    Route::delete('/rag/reset', [RagController::class, 'reset'])
-        ->middleware('role:principal');
+        // ── Account management ─────────────────────────────────────────────
+        Route::get('/users', [UserManagementController::class, 'index']);
+        Route::post('/users/teachers', [UserManagementController::class, 'storeTeacher']);
+        Route::patch('/users/{user}/status', [UserManagementController::class, 'updateStatus']);
+        Route::patch('/users/{user}/semester', [UserManagementController::class, 'updateSemester']);
+    });
 });

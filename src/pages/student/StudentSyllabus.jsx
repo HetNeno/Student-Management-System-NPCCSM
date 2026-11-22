@@ -1,12 +1,16 @@
 import { useState, useMemo } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useNavigate, useOutletContext } from 'react-router-dom';
 import { useSyllabus } from '../../context/SyllabusContext';
 import { getSubjectsForSemester, getTotalTopics } from '../../data/syllabusDatabase';
 import ConnectionBanner from '../../components/shared/ConnectionBanner';
+import { useRevisions } from '../../hooks/useRevisions';
 
 export default function StudentSyllabus() {
   const { semester } = useOutletContext();
   const { state, loading, usingFallback } = useSyllabus();
+  const { isRevised, toggle: toggleRevision, countFor, error: revisionError } = useRevisions();
+  const navigate = useNavigate();
+  const askNova = (prompt) => navigate(`/student/career?q=${encodeURIComponent(prompt)}`);
 
   const [selectedSubjectIdx, setSelectedSubjectIdx] = useState(0);
   const [filterTab, setFilterTab] = useState('all'); // all, completed, pending
@@ -45,6 +49,9 @@ export default function StudentSyllabus() {
   return (
     <div className="mx-auto max-w-7xl space-y-6">
       <ConnectionBanner show={usingFallback} />
+      {revisionError && (
+        <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm text-rose-700">{revisionError}</p>
+      )}
 
       {/* ── Page Header Banner with Glass Effect ── */}
       <div className="rounded-2xl border border-stone-200/70 bg-white/85 backdrop-blur-md p-6 md:p-7 shadow-[0_8px_30px_rgb(0,0,0,0.02)]">
@@ -76,7 +83,10 @@ export default function StudentSyllabus() {
                   {completionPct}%
                 </p>
                 <p className="text-[11px] font-medium text-stone-500">
-                  {coveredTopics} of {totalTopics} completed
+                  {coveredTopics} of {totalTopics} covered in class
+                </p>
+                <p className="text-[11px] font-bold text-emerald-700">
+                  {countFor(activeSub.code)} of {totalTopics} revised by you
                 </p>
               </div>
               <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#8B2635] text-white shadow-md shadow-[#8B2635]/20">
@@ -310,7 +320,7 @@ export default function StudentSyllabus() {
                                 </div>
                               </div>
 
-                              <div className="ml-8 sm:ml-0 shrink-0">
+                              <div className="ml-8 flex shrink-0 flex-wrap items-center gap-1.5 sm:ml-0 sm:justify-end">
                                 <span
                                   className={`inline-block rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
                                     isDone
@@ -318,8 +328,35 @@ export default function StudentSyllabus() {
                                       : 'bg-stone-100 text-stone-500'
                                   }`}
                                 >
-                                  {isDone ? 'Covered' : 'Pending'}
+                                  {isDone ? 'Covered in class' : 'Not covered yet'}
                                 </span>
+                                <button
+                                  type="button"
+                                  aria-pressed={isRevised(activeSub.code, topic)}
+                                  onClick={() => toggleRevision(activeSub.code, topic)}
+                                  className={`btn-press rounded-full px-2.5 py-0.5 text-[10px] font-bold ring-1 transition-colors ${
+                                    isRevised(activeSub.code, topic)
+                                      ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
+                                      : 'bg-white text-stone-500 ring-stone-200 hover:text-emerald-700 hover:ring-emerald-200'
+                                  }`}
+                                >
+                                  <i className={`fa-solid ${isRevised(activeSub.code, topic) ? 'fa-circle-check' : 'fa-circle'} mr-1 text-[9px]`} />
+                                  {isRevised(activeSub.code, topic) ? 'Revised' : 'Mark revised'}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => askNova(`Explain "${topic}" from ${activeSub.title} (${activeSub.code}) in simple words with one example.`)}
+                                  className="rounded-full bg-white px-2.5 py-0.5 text-[10px] font-bold text-[#8B2635] ring-1 ring-[#8B2635]/20 hover:bg-[#8B2635]/5"
+                                >
+                                  <i className="fa-solid fa-wand-magic-sparkles mr-1 text-[9px]" />Explain
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => askNova(`Quiz me: ask 3 multiple-choice questions on "${topic}" from ${activeSub.title}. Show the answers with a one-line reason at the end.`)}
+                                  className="rounded-full bg-white px-2.5 py-0.5 text-[10px] font-bold text-stone-600 ring-1 ring-stone-200 hover:text-stone-900"
+                                >
+                                  <i className="fa-solid fa-circle-question mr-1 text-[9px]" />Quiz me
+                                </button>
                               </div>
                             </div>
                           );

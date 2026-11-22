@@ -12,7 +12,8 @@ class RoleMiddleware
     {
         $user = $request->user();
 
-        abort_unless($user && in_array($user->role, $roles, true), 403);
+        abort_unless($user, 401);
+        abort_unless(in_array($user->role, $roles, true), 403, 'You do not have permission to access this resource.');
 
         return $next($request);
     }

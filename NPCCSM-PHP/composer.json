@@ -1,7 +1,7 @@
 {
   "name": "npccsm/academic-portal",
   "type": "project",
-  "description": "NPCCSM Academic Portal rebuilt with Laravel and PostgreSQL",
+  "description": "NPCCSM Academic Portal: Laravel 12 API + MySQL, React SPA",
   "license": "proprietary",
   "require": {
     "php": "^8.3",

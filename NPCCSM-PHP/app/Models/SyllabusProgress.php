@@ -22,7 +22,7 @@ class SyllabusProgress extends Model
             'covered_topics' => 'array',
             'topic_notes' => 'array',
             'semester' => 'integer',
-            'last_updated' => 'date',
+            'last_updated' => 'date:Y-m-d',
             'updated_at' => 'datetime',
         ];
     }

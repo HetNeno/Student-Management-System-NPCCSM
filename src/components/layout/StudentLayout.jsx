@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import BrandLogo from '../shared/BrandLogo';
 
 const NAV_ITEMS = [
   {
@@ -30,63 +31,27 @@ const NAV_ITEMS = [
   {
     to: '/student/resources',
     end: false,
-    label: 'Resources',
+    label: 'Materials & Notices',
     icon: 'fa-solid fa-box-archive',
   },
 ];
 
-const SEMESTERS = [
-  { id: 1, label: 'Semester 1' },
-  { id: 2, label: 'Semester 2' },
-  { id: 3, label: 'Semester 3' },
-  { id: 4, label: 'Semester 4' },
-  { id: 5, label: 'Semester 5' },
-  { id: 6, label: 'Semester 6' },
-];
 
 export default function StudentLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [semDropdownOpen, setSemDropdownOpen] = useState(false);
-  const dropdownRef = useRef(null);
-
-  const [semester, setSemesterState] = useState(() => {
-    try {
-      const saved = localStorage.getItem('npccsm_student_active_sem');
-      return saved ? Number(saved) : 5;
-    } catch {
-      return 5;
-    }
-  });
-
   const { user, logout } = useAuth();
+
+  // Locked to the semester on the student's account. The server enforces the
+  // same rule on every request, so this is not just a UI restriction.
+  const semester = user?.semester || 1;
   const navigate = useNavigate();
   const location = useLocation();
 
   // Close mobile drawer on route transition
   useEffect(() => {
     setMobileOpen(false);
-    setSemDropdownOpen(false);
   }, [location.pathname]);
-
-  // Click outside to close semester dropdown
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setSemDropdownOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const handleSemesterChange = (sem) => {
-    setSemesterState(sem);
-    setSemDropdownOpen(false);
-    try {
-      localStorage.setItem('npccsm_student_active_sem', String(sem));
-    } catch {}
-  };
 
   const handleLogout = () => {
     logout();
@@ -118,10 +83,13 @@ export default function StudentLayout() {
 
         <div className={`flex items-center border-b border-slate-100 px-5 ${collapsed ? 'justify-center py-5' : 'justify-between py-4'}`}>
           <div className="flex items-center gap-3 min-w-0">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#8B2635] text-white shadow-md shadow-[#8B2635]/20">
-              <i className="fa-solid fa-graduation-cap text-base" />
-            </div>
-            {!collapsed && <h1 className="text-base font-black tracking-tight text-slate-900">NPCCSM</h1>}
+            {collapsed ? (
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#8B2635] text-white shadow-md shadow-[#8B2635]/20" title="NPCCSM">
+                <i className="fa-solid fa-graduation-cap text-base" />
+              </div>
+            ) : (
+              <BrandLogo className="h-9" />
+            )}
           </div>
 
           <button
@@ -134,20 +102,10 @@ export default function StudentLayout() {
         </div>
 
         {!collapsed && (
-          <div className="border-b border-slate-100 bg-slate-50/80 px-4 py-3.5">
-            <div className="relative">
-              <select
-                value={semester}
-                onChange={(e) => handleSemesterChange(Number(e.target.value))}
-                className="w-full appearance-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm outline-none transition-all hover:border-[#8B2635]/30 focus:border-[#8B2635]"
-              >
-                {SEMESTERS.map((s) => (
-                  <option key={s.id} value={s.id}>{s.label}</option>
-                ))}
-              </select>
-              <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
-                <i className="fa-solid fa-chevron-down text-[10px]" />
-              </div>
+          <div className="border-b border-slate-100 bg-slate-50/80 px-4 py-3">
+            <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm">
+              <span><i className="fa-solid fa-layer-group mr-2 text-[#8B2635]" />BCA Semester {semester}</span>
+              <i className="fa-solid fa-lock text-[10px] text-slate-400" title="Your semester is set on your account" />
             </div>
           </div>
         )}
@@ -219,36 +177,13 @@ export default function StudentLayout() {
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="relative" ref={dropdownRef}>
-              <button
-                type="button"
-                onClick={() => setSemDropdownOpen(!semDropdownOpen)}
-                className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 shadow-sm transition-all hover:border-slate-300"
-              >
-                <span>Semester {semester}</span>
-                <i className={`fa-solid fa-chevron-down text-[10px] text-slate-400 transition-transform duration-200 ${semDropdownOpen ? 'rotate-180' : ''}`} />
-              </button>
-
-              {semDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-44 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-2xl z-50">
-                  <div className="space-y-0.5">
-                    {SEMESTERS.map((s) => (
-                      <button
-                        key={s.id}
-                        type="button"
-                        onClick={() => handleSemesterChange(s.id)}
-                        className={`flex w-full items-center justify-between rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
-                          s.id === semester ? 'bg-[#8B2635] text-white' : 'text-slate-700 hover:bg-slate-100'
-                        }`}
-                      >
-                        <span>{s.label}</span>
-                        {s.id === semester && <i className="fa-solid fa-check text-[10px]" />}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            <span
+              className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 shadow-sm"
+              title="Your semester is set on your account. Contact the principal if it is wrong."
+            >
+              Semester {semester}
+              <i className="fa-solid fa-lock text-[10px] text-slate-400" />
+            </span>
 
             <NavLink
               to="/student/career"
@@ -261,8 +196,20 @@ export default function StudentLayout() {
         </header>
 
         <main className="flex-1 overflow-y-auto p-5 md:p-7 custom-scrollbar">
-          <Outlet context={{ semester, setSemester: handleSemesterChange }} />
+          <div key={location.pathname} className="content-change">
+            <Outlet context={{ semester }} />
+          </div>
         </main>
+
+        {!location.pathname.startsWith('/student/career') && (
+          <NavLink
+            to="/student/career"
+            aria-label="Ask Nova, the AI advisor"
+            className="fab-float fixed bottom-5 right-5 z-30 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#8B2635] text-white shadow-lg shadow-[#8B2635]/30 transition hover:scale-105 hover:shadow-xl focus-visible:scale-105"
+          >
+            <i className="fa-solid fa-comments text-lg" />
+          </NavLink>
+        )}
       </div>
     </div>
   );

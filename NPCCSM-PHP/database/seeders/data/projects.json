@@ -1,0 +1,115 @@
+[
+  {
+    "title": "Enterprise Java Management Portal",
+    "description": "Build a production-ready Java application using OOP principles, JDBC, and relational database management.",
+    "category": "Backend",
+    "difficulty": "Intermediate",
+    "hours": "25-35 hrs",
+    "tech": [
+      "Java",
+      "JDBC",
+      "MySQL",
+      "OOP"
+    ],
+    "milestones": [
+      "Design relational schema with normalization (1NF, 2NF, 3NF)",
+      "Implement DAO layer and connection pooling",
+      "Create CRUD controllers with validation and exception handling",
+      "Add role-based authentication and audit logging"
+    ]
+  },
+  {
+    "title": "Full-Stack Student Portfolio & Task Hub",
+    "description": "Create a responsive web application with dynamic state management, Kanban boards, and clean API integration.",
+    "category": "Web",
+    "difficulty": "Intermediate",
+    "hours": "20-30 hrs",
+    "tech": [
+      "React",
+      "Tailwind CSS",
+      "REST API",
+      "JavaScript"
+    ],
+    "milestones": [
+      "Set up component hierarchy and Tailwind design tokens",
+      "Implement local storage and backend sync for tasks",
+      "Add filterable categories and drag-and-drop state updates",
+      "Deploy application on Vercel or Netlify"
+    ]
+  },
+  {
+    "title": "Secure Authentication & Microservice API",
+    "description": "Design and deploy a backend REST API with JWT tokens, password hashing, and role middleware.",
+    "category": "Backend",
+    "difficulty": "Advanced",
+    "hours": "30-40 hrs",
+    "tech": [
+      "Node.js",
+      "Express",
+      "JWT",
+      "PostgreSQL"
+    ],
+    "milestones": [
+      "Initialize Express app with security headers and CORS",
+      "Configure PostgreSQL models and migrations",
+      "Implement JWT token refresh rotation and bcrypt hashing",
+      "Write integration tests and API documentation"
+    ]
+  },
+  {
+    "title": "Student Analytics & Performance Dashboard",
+    "description": "Connect to database records, transform aggregate academic metrics, and render interactive charts.",
+    "category": "Data",
+    "difficulty": "Beginner",
+    "hours": "15-20 hrs",
+    "tech": [
+      "Python",
+      "Pandas",
+      "SQL",
+      "Chart.js"
+    ],
+    "milestones": [
+      "Extract CSV and database records using SQL queries",
+      "Compute aggregate statistics (mean, percentiles, distribution)",
+      "Render SVG/Canvas visualization charts",
+      "Export formatted reports as PDF"
+    ]
+  },
+  {
+    "title": "Mobile Attendance & Syllabus Companion",
+    "description": "Build a cross-platform mobile companion app for tracking lecture attendance and topic coverage.",
+    "category": "Mobile",
+    "difficulty": "Advanced",
+    "hours": "35-45 hrs",
+    "tech": [
+      "React Native",
+      "SQLite",
+      "Mobile UI"
+    ],
+    "milestones": [
+      "Configure mobile navigation and tab layout",
+      "Store offline attendance records in SQLite database",
+      "Implement push reminders and syllabus checklist",
+      "Build native bundle for Android testing"
+    ]
+  },
+  {
+    "title": "Personal Developer Portfolio & Blog",
+    "description": "Showcase your BCA coursework, projects, resume, and tech articles with a fast, modern static site.",
+    "category": "Web",
+    "difficulty": "Beginner",
+    "hours": "10-15 hrs",
+    "tech": [
+      "HTML5",
+      "Tailwind",
+      "JavaScript",
+      "Git"
+    ],
+    "milestones": [
+      "Design clean, accessible layout with semantic tags",
+      "Add interactive project showcase and resume preview",
+      "Implement contact form with client validation",
+      "Connect custom domain and GitHub Pages deployment"
+    ]
+  }
+]

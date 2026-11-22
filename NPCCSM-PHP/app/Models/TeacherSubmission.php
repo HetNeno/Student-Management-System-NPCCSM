@@ -19,7 +19,7 @@ class TeacherSubmission extends Model
         return [
             'covered_topic' => 'array',
             'mandatory_note' => 'array',
-            'lecture_date' => 'date',
+            'lecture_date' => 'date:Y-m-d',
             'created_at' => 'datetime',
         ];
     }

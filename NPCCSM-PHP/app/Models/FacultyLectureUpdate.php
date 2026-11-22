@@ -20,7 +20,7 @@ class FacultyLectureUpdate extends Model
             'covered_topic' => 'array',
             'mandatory_note' => 'array',
             'semester' => 'integer',
-            'lecture_date' => 'date',
+            'lecture_date' => 'date:Y-m-d',
             'created_at' => 'datetime',
         ];
     }

@@ -1,235 +1,154 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { useSyllabus } from '../../context/SyllabusContext';
 import { getSubjectsForSemester } from '../../data/syllabusDatabase';
-import { useToast } from '../../components/shared/Toast';
+import { getMaterials, getNotices, materialDownloadUrl } from '../../lib/apiClient';
+import NoticeList from '../../components/shared/NoticeList';
 
+export const CATEGORY_LABELS = {
+  notes: 'Lecture notes',
+  assignment: 'Assignment',
+  question_bank: 'Question bank',
+  reference: 'Reference',
+  other: 'Other',
+};
+
+const FILE_ICON = {
+  pdf: 'fa-regular fa-file-pdf text-rose-600',
+  doc: 'fa-regular fa-file-word text-blue-600',
+  docx: 'fa-regular fa-file-word text-blue-600',
+  ppt: 'fa-regular fa-file-powerpoint text-orange-600',
+  pptx: 'fa-regular fa-file-powerpoint text-orange-600',
+  xlsx: 'fa-regular fa-file-excel text-emerald-600',
+  zip: 'fa-regular fa-file-zipper text-slate-600',
+  txt: 'fa-regular fa-file-lines text-slate-600',
+};
+
+export function formatSize(bytes) {
+  if (!bytes && bytes !== 0) return '';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+export const fileIcon = (name = '') => FILE_ICON[name.split('.').pop()?.toLowerCase()] || 'fa-regular fa-file text-slate-500';
+
+/** Study materials uploaded by faculty for the student's semester, plus notices. */
 export default function StudentResources() {
   const { semester } = useOutletContext();
-  const { state } = useSyllabus();
-  const toast = useToast();
-
   const subjects = useMemo(() => getSubjectsForSemester(semester), [semester]);
-  const [selectedSubject, setSelectedSubject] = useState('All');
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  const [searchQuery, setSearchQuery] = useState('');
+  const subjectTitle = useMemo(() => Object.fromEntries(subjects.map((s) => [s.code, s.title])), [subjects]);
 
-  // Generate resource library items dynamically from subjects and live notes
-  const resourcesList = useMemo(() => {
-    const list = [];
+  const [subject, setSubject] = useState('All');
+  const [category, setCategory] = useState('All');
+  const [search, setSearch] = useState('');
+  const [materials, setMaterials] = useState({ loading: true, error: '', items: [] });
+  const [notices, setNotices] = useState({ loading: true, error: '', items: [] });
 
-    subjects.forEach((sub) => {
-      const subState = state[sub.code];
+  useEffect(() => {
+    let active = true;
+    setMaterials((m) => ({ ...m, loading: true, error: '' }));
+    getMaterials({ subject_code: subject, category })
+      .then((res) => active && setMaterials({ loading: false, error: '', items: res.data || [] }))
+      .catch((err) => active && setMaterials({ loading: false, error: err.message, items: [] }));
+    return () => {
+      active = false;
+    };
+  }, [subject, category]);
 
-      // Unit lecture notes PDF
-      sub.units.forEach((unit, uIdx) => {
-        list.push({
-          id: `${sub.code}-u${uIdx + 1}`,
-          subjectCode: sub.code,
-          subjectTitle: sub.title,
-          title: `${unit.name} - Lecture Slides & Comprehensive Notes`,
-          category: 'Unit Notes',
-          type: 'PDF',
-          size: `${(1.2 + uIdx * 0.4).toFixed(1)} MB`,
-          downloads: 120 + uIdx * 25,
-          faculty: subState?.facultyName || 'NPCCSM Faculty',
-        });
-      });
+  useEffect(() => {
+    getNotices()
+      .then((res) => setNotices({ loading: false, error: '', items: res.data || [] }))
+      .catch((err) => setNotices({ loading: false, error: err.message, items: [] }));
+  }, []);
 
-      // Quick Cheat Sheet
-      list.push({
-        id: `${sub.code}-cheat`,
-        subjectCode: sub.code,
-        subjectTitle: sub.title,
-        title: `${sub.title} - Quick Syntax & Concept Cheat Sheet`,
-        category: 'Cheat Sheet',
-        type: 'DOC',
-        size: '640 KB',
-        downloads: 210,
-        faculty: 'Curriculum Cell',
-      });
-
-      // Exam Question Bank
-      list.push({
-        id: `${sub.code}-qbank`,
-        subjectCode: sub.code,
-        subjectTitle: sub.title,
-        title: `${sub.code} - High-Yield Exam Question Bank & Solutions`,
-        category: 'Question Bank',
-        type: 'PDF',
-        size: '2.4 MB',
-        downloads: 340,
-        faculty: subState?.facultyName || 'Exam Committee',
-      });
-
-      // Previous Year Exam Paper
-      list.push({
-        id: `${sub.code}-pyq`,
-        subjectCode: sub.code,
-        subjectTitle: sub.title,
-        title: `${sub.code} - University Solved Question Papers (2022-2024)`,
-        category: 'Previous Papers',
-        type: 'ZIP',
-        size: '4.8 MB',
-        downloads: 450,
-        faculty: 'Academic Archive',
-      });
-    });
-
-    return list;
-  }, [subjects, state]);
-
-  const filteredResources = useMemo(() => {
-    return resourcesList.filter((r) => {
-      const matchesSub = selectedSubject === 'All' || r.subjectCode === selectedSubject;
-      const matchesCat = selectedCategory === 'All' || r.category === selectedCategory;
-      const matchesSearch =
-        !searchQuery ||
-        r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        r.subjectCode.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesSub && matchesCat && matchesSearch;
-    });
-  }, [resourcesList, selectedSubject, selectedCategory, searchQuery]);
-
-  const handleDownload = (resource) => {
-    toast.show(`Downloading "${resource.title}" (${resource.size})...`, 'success');
-  };
+  const visible = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return materials.items;
+    return materials.items.filter((m) => `${m.title} ${m.description || ''} ${m.original_name}`.toLowerCase().includes(q));
+  }, [materials.items, search]);
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
-      {/* ── Page Header with Glass Effect ── */}
-      <div className="rounded-2xl border border-stone-200/70 bg-white/85 backdrop-blur-md p-6 md:p-7 shadow-[0_8px_30px_rgb(0,0,0,0.02)]">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <div className="flex items-center gap-2.5">
-              <span className="text-[10px] font-black uppercase tracking-wider text-[#8B2635]">
-                Academic Archive
-              </span>
-              <span className="rounded-full bg-stone-100 border border-stone-200/80 px-2.5 py-0.5 text-[10px] font-bold text-stone-600">
-                Semester {semester}
-              </span>
-            </div>
-            <h1 className="text-xl md:text-2xl font-black tracking-tight text-stone-900 mt-1">
-              Study Resources &amp; Exam Materials
-            </h1>
-            <p className="text-xs font-medium text-stone-500 mt-0.5">
-              Download lecture slides, high-yield question banks, cheat sheets, and university previous papers.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="rounded-xl border border-stone-200/80 bg-[#FAF7F5] px-4 py-2 text-center shadow-sm">
-              <span className="text-[10px] font-black uppercase tracking-wider text-stone-400">
-                Available Files
-              </span>
-              <p className="text-base font-black text-stone-900 mt-0.5">
-                {filteredResources.length} Documents
-              </p>
-            </div>
-          </div>
-        </div>
+    <div className="mx-auto max-w-6xl space-y-5">
+      <div>
+        <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#8B2635]">Semester {semester}</p>
+        <h1 className="mt-1 text-2xl font-black tracking-tight text-stone-900">Study Materials &amp; Notices</h1>
+        <p className="mt-1 text-sm text-stone-500">Files and announcements published by your faculty for Semester {semester}.</p>
       </div>
 
-      {/* ── Search & Filter Strip ── */}
-      <div className="flex flex-col sm:flex-row gap-3 rounded-2xl border border-stone-200/70 bg-white/85 backdrop-blur-md p-4 shadow-[0_8px_30px_rgb(0,0,0,0.02)]">
-        {/* Search input */}
-        <div className="relative flex-1">
-          <i className="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-stone-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search notes by keyword or subject code..."
-            className="w-full rounded-xl border border-stone-200/90 bg-[#FAF7F5] pl-9 pr-3 py-2 text-xs font-medium text-stone-900 outline-none placeholder:text-stone-400 focus:border-[#8B2635]/50 focus:bg-white transition-all"
-          />
-        </div>
+      <div className="grid gap-5 lg:grid-cols-[1.55fr_1fr]">
+        <section aria-labelledby="materials-heading" className="space-y-3">
+          <div className="flex flex-col gap-2 rounded-2xl border border-stone-200/70 bg-white/85 p-3 sm:flex-row">
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search materials"
+              aria-label="Search materials"
+              className="flex-1 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-sm outline-none focus:border-[#8B2635]/40 focus:bg-white"
+            />
+            <select value={subject} onChange={(e) => setSubject(e.target.value)} aria-label="Subject" className="rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-sm font-semibold text-stone-700">
+              <option value="All">All subjects</option>
+              {subjects.map((s) => <option key={s.code} value={s.code}>{s.code} · {s.title}</option>)}
+            </select>
+            <select value={category} onChange={(e) => setCategory(e.target.value)} aria-label="Type" className="rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-sm font-semibold text-stone-700">
+              <option value="All">All types</option>
+              {Object.entries(CATEGORY_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            </select>
+          </div>
 
-        {/* Subject Filter Dropdown */}
-        <select
-          value={selectedSubject}
-          onChange={(e) => setSelectedSubject(e.target.value)}
-          className="rounded-xl border border-stone-200/90 bg-[#FAF7F5] px-3.5 py-2 text-xs font-bold text-stone-800 outline-none focus:border-[#8B2635]/50 focus:bg-white cursor-pointer"
-        >
-          <option value="All">All Subjects (Semester {semester})</option>
-          {subjects.map((sub) => (
-            <option key={sub.code} value={sub.code}>
-              {sub.code}: {sub.title}
-            </option>
-          ))}
-        </select>
-
-        {/* Category Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 custom-scrollbar">
-          {['All', 'Unit Notes', 'Question Bank', 'Cheat Sheet', 'Previous Papers'].map((cat) => (
-            <button
-              key={cat}
-              type="button"
-              onClick={() => setSelectedCategory(cat)}
-              className={`shrink-0 rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
-                selectedCategory === cat
-                  ? 'bg-[#8B2635] text-white shadow-sm font-black'
-                  : 'bg-[#FAF7F5] text-stone-700 hover:bg-stone-200/70'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Resources Grid ── */}
-      {filteredResources.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-stone-200 bg-white/80 p-12 text-center text-stone-400">
-          <i className="fa-solid fa-box-open text-3xl mb-2 text-stone-300" />
-          <p className="text-xs font-semibold">No study resources found matching your search.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filteredResources.map((res) => (
-            <div
-              key={res.id}
-              className="rounded-2xl border border-stone-200/70 bg-white/85 backdrop-blur-md p-5 shadow-[0_8px_30px_rgb(0,0,0,0.02)] flex flex-col justify-between hover:border-stone-300 hover:shadow-md transition-all group"
-            >
-              <div>
-                <div className="flex items-start justify-between gap-2 mb-3">
-                  <span className="rounded-md bg-stone-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-stone-700">
-                    {res.subjectCode}
-                  </span>
-                  <span className="rounded-md border border-stone-200 bg-[#FAF7F5] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-stone-600">
-                    {res.type} &middot; {res.size}
-                  </span>
-                </div>
-
-                <h3 className="text-sm font-black text-stone-900 group-hover:text-[#8B2635] transition-colors leading-snug">
-                  {res.title}
-                </h3>
-                <p className="text-xs font-medium text-stone-500 mt-1 line-clamp-1">
-                  {res.subjectTitle}
-                </p>
-                <p className="text-[11px] text-stone-400 mt-2 flex items-center gap-1.5">
-                  <i className="fa-solid fa-user-tie text-[10px]" />
-                  <span>Curator: {res.faculty}</span>
-                </p>
-              </div>
-
-              <div className="mt-5 pt-3 border-t border-stone-100 flex items-center justify-between">
-                <span className="text-[11px] font-medium text-stone-400 flex items-center gap-1">
-                  <i className="fa-solid fa-download text-[10px]" /> {res.downloads} downloads
-                </span>
-
-                <button
-                  type="button"
-                  onClick={() => handleDownload(res)}
-                  className="flex items-center gap-1.5 rounded-xl bg-[#8B2635] px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-[#77212e] transition-all hover:-translate-y-0.5 shadow-[#8B2635]/20"
-                >
-                  <i className="fa-solid fa-file-arrow-down text-[10px]" />
-                  <span>Download</span>
-                </button>
-              </div>
+          <div className="overflow-hidden rounded-2xl border border-stone-200/80 bg-white shadow-[0_8px_30px_rgb(0,0,0,0.03)]">
+            <div className="flex items-center justify-between border-b border-stone-100 bg-stone-50/60 px-5 py-3">
+              <h2 id="materials-heading" className="text-xs font-black uppercase tracking-[0.18em] text-stone-600">Materials</h2>
+              {!materials.loading && <span className="text-xs font-semibold text-stone-400">{visible.length} files</span>}
             </div>
-          ))}
-        </div>
-      )}
+
+            {materials.loading ? (
+              <p className="px-5 py-10 text-center text-sm text-stone-400" role="status">Loading materials…</p>
+            ) : materials.error ? (
+              <p className="px-5 py-10 text-center text-sm text-rose-600" role="alert">{materials.error}</p>
+            ) : !visible.length ? (
+              <div className="px-5 py-12 text-center">
+                <i className="fa-regular fa-folder-open text-2xl text-stone-300" />
+                <p className="mt-3 text-sm font-semibold text-stone-700">No materials yet</p>
+                <p className="mt-1 text-xs text-stone-500">Your faculty has not uploaded anything here yet.</p>
+              </div>
+            ) : (
+              <ol className="divide-y divide-stone-100">
+                {visible.map((m, i) => (
+                  <li key={m.id} className="list-row-in flex gap-4 px-5 py-4 transition-colors hover:bg-stone-50/70" style={{ animationDelay: `${Math.min(i * 40, 280)}ms` }}>
+                    <span className="w-7 shrink-0 pt-0.5 font-mono text-sm font-bold tabular-nums text-[#8B2635]/70" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+                    <i className={`${fileIcon(m.original_name)} mt-0.5 text-xl`} aria-hidden="true" />
+                    <div className="min-w-0 flex-1">
+                      <p className="font-bold text-stone-900">{m.title}</p>
+                      {m.description && <p className="mt-0.5 text-sm text-stone-600">{m.description}</p>}
+                      <p className="mt-1.5 text-[11px] font-semibold text-stone-500">
+                        {CATEGORY_LABELS[m.category]}
+                        {m.subject_code ? ` · ${m.subject_code} ${subjectTitle[m.subject_code] || ''}` : ''}
+                        {` · ${formatSize(m.size_bytes)}`}
+                        {m.uploaded_by ? ` · ${m.uploaded_by}` : ''}
+                        {` · ${new Date(m.created_at).toLocaleDateString()}`}
+                        {m.indexed_for_ai && <span className="ml-1.5 rounded bg-[#8B2635]/5 px-1.5 py-0.5 text-[#8B2635]">Nova can answer from this</span>}
+                      </p>
+                    </div>
+                    <a
+                      href={materialDownloadUrl(m)}
+                      className="btn-press shrink-0 self-center rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-xs font-bold text-stone-700 hover:border-[#8B2635]/40 hover:text-[#8B2635]"
+                      aria-label={`Download ${m.title}`}
+                    >
+                      <i className="fa-solid fa-download mr-1.5" />Download
+                    </a>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
+        </section>
+
+        <section aria-labelledby="notices-heading" className="rounded-2xl border border-stone-200/80 bg-white p-4 shadow-[0_8px_30px_rgb(0,0,0,0.03)] self-start">
+          <h2 id="notices-heading" className="mb-3 text-xs font-black uppercase tracking-[0.18em] text-stone-600">Notices &amp; instructions</h2>
+          <NoticeList state={notices} />
+        </section>
+      </div>
     </div>
   );
 }

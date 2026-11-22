@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import ConnectionBanner from '../components/shared/ConnectionBanner';
 import EmptyState from '../components/shared/EmptyState';
 import { getSubjectsForSemester, getTotalTopics } from '../data/syllabusDatabase';
@@ -162,6 +162,21 @@ export default function TeacherStudio() {
         </div>
 
         <div className="flex items-center gap-3">
+          <Link
+            to="/teacher/content"
+            className="flex items-center gap-1.5 rounded-xl border border-stone-200/90 bg-white/90 px-3.5 py-1.5 text-xs font-bold text-stone-800 shadow-sm transition-all hover:border-[#8B2635]/40 hover:text-[#8B2635]"
+          >
+            <i className="fa-solid fa-folder-open text-[11px] text-stone-400" />
+            <span className="hidden sm:inline">Materials &amp; notices</span>
+          </Link>
+          <Link
+            to="/teacher/projects"
+            className="flex items-center gap-1.5 rounded-xl border border-stone-200/90 bg-white/90 px-3.5 py-1.5 text-xs font-bold text-stone-800 shadow-sm transition-all hover:border-[#8B2635]/40 hover:text-[#8B2635]"
+          >
+            <i className="fa-solid fa-laptop-code text-[11px] text-stone-400" />
+            <span className="hidden sm:inline">Student projects</span>
+          </Link>
+
           {/* Semester Dropdown Switcher */}
           <div className="relative">
             <button

@@ -1,14 +1,16 @@
 {
-  "name": "npccsm-syllabus-tracker",
+  "name": "npccsm-academic-portal",
   "private": true,
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "dev:server": "cd server && node index.js",
-    "dev:full": "npx -y concurrently \"npm run dev\" \"npm run dev:server\"",
+    "dev": "concurrently -k -n api,web -c red,blue \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "cd NPCCSM-PHP/public && php -d upload_max_filesize=20M -d post_max_size=25M -S 127.0.0.1:8000 ../vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php",
+    "dev:full": "npm run dev",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:api": "cd NPCCSM-PHP && php vendor/bin/phpunit",
+    "dev:web": "vite"
   },
   "dependencies": {
     "motion": "^13.2.0",
@@ -19,6 +21,7 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.20",
+    "concurrently": "^9.2.5",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.13",
     "vite": "^8.2.2"

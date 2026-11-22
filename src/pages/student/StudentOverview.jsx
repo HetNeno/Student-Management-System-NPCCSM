@@ -1,9 +1,12 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useSyllabus } from '../../context/SyllabusContext';
 import { getSubjectsForSemester, getTotalTopics } from '../../data/syllabusDatabase';
 import ConnectionBanner from '../../components/shared/ConnectionBanner';
+import NoticeList from '../../components/shared/NoticeList';
+import { getNotices, getProjects } from '../../lib/apiClient';
+import { useRevisions } from '../../hooks/useRevisions';
 
 export default function StudentOverview() {
   const { semester } = useOutletContext();
@@ -12,6 +15,26 @@ export default function StudentOverview() {
   const navigate = useNavigate();
 
   const subjects = useMemo(() => getSubjectsForSemester(semester), [semester]);
+  const { revisions, loading: revLoading } = useRevisions();
+  const [notices, setNotices] = useState({ loading: true, error: '', items: [] });
+  const [projects, setProjects] = useState({ loading: true, total: 0, started: 0 });
+
+  useEffect(() => {
+    let active = true;
+    getNotices()
+      .then((res) => active && setNotices({ loading: false, error: '', items: res.data || [] }))
+      .catch((err) => active && setNotices({ loading: false, error: err.message, items: [] }));
+    getProjects()
+      .then((res) => {
+        if (!active) return;
+        const list = res.data || [];
+        setProjects({ loading: false, total: list.length, started: list.filter((p) => p.enrollment).length });
+      })
+      .catch(() => active && setProjects({ loading: false, total: 0, started: 0 }));
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const stats = useMemo(() => {
     let totalAllTopics = 0;
@@ -31,8 +54,22 @@ export default function StudentOverview() {
     });
 
     const overallPct = totalAllTopics > 0 ? Math.round((coveredAllTopics / totalAllTopics) * 100) : 0;
-    return { totalAllTopics, coveredAllTopics, notesTotal, overallPct };
-  }, [subjects, state]);
+    const revisedTotal = subjects.reduce((n, sub) => n + (revisions[sub.code] || []).length, 0);
+    const revisedPct = totalAllTopics > 0 ? Math.round((revisedTotal / totalAllTopics) * 100) : 0;
+    const notesPct = coveredAllTopics > 0 ? Math.round((notesTotal / coveredAllTopics) * 100) : 0;
+    return { totalAllTopics, coveredAllTopics, notesTotal, overallPct, revisedTotal, revisedPct, notesPct };
+  }, [subjects, state, revisions]);
+
+  // First topic the faculty has covered that the student has not revised yet.
+  const nextToRevise = useMemo(() => {
+    for (const sub of subjects) {
+      const covered = state[sub.code]?.coveredTopics || [];
+      const done = revisions[sub.code] || [];
+      const topic = covered.find((t) => !done.includes(t));
+      if (topic) return { subject: sub, topic };
+    }
+    return null;
+  }, [subjects, state, revisions]);
 
   const recentUpdates = useMemo(() => {
     const list = [];
@@ -93,36 +130,36 @@ export default function StudentOverview() {
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
-          label="Semester progress"
+          label="Syllabus covered"
           value={`${stats.overallPct}%`}
-          hint={`${stats.coveredAllTopics} / ${stats.totalAllTopics} topics`}
+          hint={`${stats.coveredAllTopics} / ${stats.totalAllTopics} topics taught by faculty`}
           icon="fa-solid fa-chart-pie"
           accent="rose"
           progress={stats.overallPct}
         />
         <MetricCard
-          label="Courses"
-          value={String(subjects.length)}
-          hint={`Semester ${semester}`}
-          icon="fa-solid fa-book-open"
+          label="My revision"
+          value={revLoading ? '…' : `${stats.revisedPct}%`}
+          hint={`${stats.revisedTotal} / ${stats.totalAllTopics} topics revised by you`}
+          icon="fa-solid fa-book-open-reader"
           accent="slate"
-          progress={60}
+          progress={stats.revisedPct}
         />
         <MetricCard
           label="Exam notes"
           value={String(stats.notesTotal)}
-          hint="Key topics published"
+          hint={stats.coveredAllTopics ? `Notes on ${stats.notesPct}% of covered topics` : 'No topics covered yet'}
           icon="fa-solid fa-file-lines"
           accent="amber"
-          progress={75}
+          progress={stats.notesPct}
         />
         <MetricCard
           label="Projects"
-          value="6"
-          hint="Recommended practice"
+          value={projects.loading ? '…' : String(projects.total)}
+          hint={projects.total ? `${projects.started} started by you` : 'No projects published yet'}
           icon="fa-solid fa-laptop-code"
           accent="emerald"
-          progress={88}
+          progress={projects.total ? Math.round((projects.started / projects.total) * 100) : 0}
         />
       </div>
 
@@ -191,14 +228,11 @@ export default function StudentOverview() {
 
             <div className="rounded-[24px] border border-slate-200 bg-white/90 p-5 shadow-[0_12px_30px_rgba(15,23,42,0.03)]">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-black text-slate-900">This week</h3>
-                <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">Agenda</span>
+                <h3 className="text-sm font-black text-slate-900">Notices from faculty</h3>
+                <button type="button" onClick={() => navigate('/student/resources')} className="text-[11px] font-bold text-[#8B2635] hover:underline">All →</button>
               </div>
-
-              <div className="mt-4 space-y-3 text-sm">
-                <AgendaItem time="09:00" title="Data Structures lecture" detail="Room A-12" />
-                <AgendaItem time="11:30" title="Web development lab" detail="Project work" />
-                <AgendaItem time="15:00" title="Career mentorship" detail="Resume review" />
+              <div className="mt-4">
+                <NoticeList state={notices} limit={3} compact />
               </div>
             </div>
           </div>
@@ -232,16 +266,32 @@ export default function StudentOverview() {
           </div>
 
           <div className="rounded-[24px] border border-slate-200 bg-gradient-to-br from-[#8B2635] to-[#A93F49] p-5 text-white shadow-[0_18px_40px_rgba(139,38,53,0.22)]">
-            <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-white/75">Focus</p>
-            <h3 className="mt-2 text-xl font-black">Strong academic momentum</h3>
-            <p className="mt-2 text-sm text-white/80">Keep your syllabus coverage aligned to weekly goals and upcoming assessments.</p>
-            <button
-              type="button"
-              onClick={() => navigate('/student/projects')}
-              className="mt-4 rounded-xl bg-white px-3.5 py-2 text-xs font-bold text-[#8B2635]"
-            >
-              Continue learning
-            </button>
+            <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-white/75">Revision focus</p>
+            {nextToRevise ? (
+              <>
+                <h3 className="mt-2 text-lg font-black leading-snug">{nextToRevise.topic}</h3>
+                <p className="mt-1 text-sm text-white/80">{nextToRevise.subject.title}: taught in class, not yet revised by you.</p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <button type="button" onClick={() => navigate('/student/syllabus')} className="btn-press rounded-xl bg-white px-3.5 py-2 text-xs font-bold text-[#8B2635]">
+                    Open in Academic Plan
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/student/career?q=${encodeURIComponent(`Explain "${nextToRevise.topic}" from ${nextToRevise.subject.title} simply, then give me 3 quick self-check questions.`)}`)}
+                    className="btn-press rounded-xl border border-white/40 px-3.5 py-2 text-xs font-bold text-white hover:bg-white/10"
+                  >
+                    Revise with Nova
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h3 className="mt-2 text-lg font-black">You are up to date</h3>
+                <p className="mt-1 text-sm text-white/80">
+                  {stats.coveredAllTopics ? 'You have revised every topic your faculty has covered so far.' : 'Topics will appear here once faculty publish lecture coverage.'}
+                </p>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -293,19 +343,5 @@ function QuickAction({ icon, label, desc, onClick }) {
         <p className="text-[11px] text-slate-500">{desc}</p>
       </div>
     </button>
-  );
-}
-
-function AgendaItem({ time, title, detail }) {
-  return (
-    <div className="flex gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#8B2635]/10 text-[10px] font-black text-[#8B2635]">
-        {time}
-      </div>
-      <div>
-        <p className="text-sm font-bold text-slate-800">{title}</p>
-        <p className="text-[11px] text-slate-500">{detail}</p>
-      </div>
-    </div>
   );
 }

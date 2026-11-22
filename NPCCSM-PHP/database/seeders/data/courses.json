@@ -1,0 +1,1150 @@
+[
+  {
+    "subject_code": "CAM201-1C",
+    "title": "Programming Fundamentals and Problem Solving",
+    "semester": 1,
+    "type": "Major Course • 4 Credits",
+    "icon_class": "fa-solid fa-code",
+    "units": [
+      {
+        "name": "Unit I: Intro to Programming & Tools",
+        "topics": [
+          "Concept of programming language",
+          "Algorithm and Flowchart",
+          "Translator (Compiler, Interpreter, Linker, Loader)",
+          "Overview of C and Structure",
+          "Tokens, Constants, Keywords, Identifiers"
+        ]
+      },
+      {
+        "name": "Unit II: Basics of C Language",
+        "topics": [
+          "Arithmetic, Relational & Logical Operators",
+          "Bitwise, Conditional & Assignment Operators",
+          "Type conversions & Precedence",
+          "Mathematical functions (pow, sqrt, ceil, floor)",
+          "I/O Functions (printf, scanf, gets)"
+        ]
+      },
+      {
+        "name": "Unit III: Control and Iterative Statement",
+        "topics": [
+          "Decision making (IF, IF ELSE, Nested)",
+          "ELSE IF ladder & Switch statement",
+          "Looping (WHILE, DO-WHILE, FOR)",
+          "Break, continue and Nested Looping"
+        ]
+      },
+      {
+        "name": "Unit IV: Array and Strings",
+        "topics": [
+          "Declaration and initialization of 1D arrays",
+          "2D arrays and Multidimensional concepts",
+          "Declaring, reading and writing strings",
+          "String Handling functions (Copy, Compare, Concat)"
+        ]
+      }
+    ]
+  },
+  {
+    "subject_code": "CAM202-1C",
+    "title": "Internet Technology",
+    "semester": 1,
+    "type": "Major Course • 4 Credits",
+    "icon_class": "fa-solid fa-globe",
+    "units": [
+      {
+        "name": "Unit I: Intro to Internet",
+        "topics": [
+          "Internet, Extranet, Intranet",
+          "WWW, URL, DNS, FTP, Web Browser",
+          "Search Engine usage",
+          "Email Communication and Social Networking"
+        ]
+      },
+      {
+        "name": "Unit II: Basics of HTML & Forms",
+        "topics": [
+          "HTML Document Structure & Tags",
+          "Text formatting, Lists, Images, Media",
+          "HTML Tables & Framesets",
+          "HTML Forms and Interactive Fields"
+        ]
+      },
+      {
+        "name": "Unit III: Introduction to CSS",
+        "topics": [
+          "CSS Syntax and Inclusion",
+          "CSS Measurement, Colors, Background",
+          "CSS Fonts, Text, Links, Tables",
+          "ID, Class, Inline, Internal & External Selectors"
+        ]
+      },
+      {
+        "name": "Unit IV: Advance CSS & CSS3",
+        "topics": [
+          "CSS Visibility, Positioning, Layers",
+          "CSS3 Rounded corners, Gradients, Shadows",
+          "2D and 3D Transform",
+          "User Interface and Box Sizing"
+        ]
+      }
+    ]
+  },
+  {
+    "subject_code": "CAE201-1C",
+    "title": "Digital Electronics",
+    "semester": 1,
+    "type": "Minor Course • 4 Credits",
+    "icon_class": "fa-solid fa-microchip",
+    "units": [
+      {
+        "name": "Unit I: Components of a Computer",
+        "topics": [
+          "Generation & Classification of Computer",
+          "Input/Output Devices",
+          "Processing Device (CPU, ALU, CU)",
+          "Primary & Secondary Storage (RAM, ROM)"
+        ]
+      },
+      {
+        "name": "Unit II: Number systems and Codes",
+        "topics": [
+          "Decimal & Binary conversions",
+          "Hexadecimal conversions",
+          "BCD numbers"
+        ]
+      },
+      {
+        "name": "Unit III: Logic gates and ALU",
+        "topics": [
+          "Basic Gates (OR, AND, NOT)",
+          "NOR, NAND, XOR, XNOR",
+          "De Morgan’s theorems",
+          "Multiplexers and Inverter"
+        ]
+      },
+      {
+        "name": "Unit IV: Boolean Algebra",
+        "topics": [
+          "Instruction Cycle/CPU Operation",
+          "Binary addition and subtraction",
+          "Half/Full Adders & 2's Complement",
+          "Flip-Flops (RS, D, JK)"
+        ]
+      }
+    ]
+  },
+  {
+    "subject_code": "MDC201-1C",
+    "title": "Mathematics for Computer Science",
+    "semester": 1,
+    "type": "MDC • 4 Credits",
+    "icon_class": "fa-solid fa-square-root-variable",
+    "units": [
+      {
+        "name": "Unit I: Set Theory",
+        "topics": [
+          "Representation of Sets & Types",
+          "Set Operations (Union, Intersection)",
+          "De Morgan’s Laws",
+          "Cartesian Product of Set"
+        ]
+      },
+      {
+        "name": "Unit II: Matrices",
+        "topics": [
+          "Types of Matrices",
+          "Operations (Addition, Scalar, Multiplication)",
+          "Determinant, Adjoint and Inverse",
+          "System of Linear Eq (Cramer’s, Gauss)"
+        ]
+      },
+      {
+        "name": "Unit III: Graph",
+        "topics": [
+          "Types of Graphs (Directed, Undirected)",
+          "Representation (Adjacency, Incidence)",
+          "Traversals (BFS, DFS)",
+          "Dijkstra’s algorithm"
+        ]
+      },
+      {
+        "name": "Unit IV: Functions",
+        "topics": [
+          "Relations, Domain, Range",
+          "Function Types (One-one, Onto, Into)",
+          "Algebra of real functions"
+        ]
+      }
+    ]
+  },
+  {
+    "subject_code": "AEC202-1C",
+    "title": "Communication Skills",
+    "semester": 1,
+    "type": "AEC • 2 Credits",
+    "icon_class": "fa-solid fa-comments",
+    "units": [
+      {
+        "name": "Unit I: Fundamentals of Communication",
+        "topics": [
+          "Process of Communication",
+          "7 C's of Communication",
+          "Barriers to Effective Communication",
+          "Active VS Passive listening"
+        ]
+      },
+      {
+        "name": "Unit II: Types of Communication",
+        "topics": [
+          "Verbal (Oral and written)",
+          "Non-verbal (Kinesics, Proxemics)",
+          "Telephonic Skills",
+          "Conversations and Reading comprehension"
+        ]
+      },
+      {
+        "name": "Unit III: Professional Comm in Practice",
+        "topics": [
+          "Presentation skills",
+          "Group discussion techniques",
+          "Email writing etiquettes",
+          "Meetings agenda and minutes"
+        ]
+      }
+    ]
+  },
+  {
+    "subject_code": "CAM203-1C",
+    "title": "Programming in 'C'",
+    "semester": 2,
+    "type": "Major Course • 4 Credits",
+    "icon_class": "fa-solid fa-c",
+    "units": [
+      {
+        "name": "Unit I: User-Defined Functions",
+        "topics": [
+          "Function definition, call and declaration",
+          "Categories of functions",
+          "Nesting of functions",
+          "Recursion"
+        ]
+      },
+      {
+        "name": "Unit II: Structures and Unions",
+        "topics": [
+          "Structure declaration and initialization",
+          "Array of structures & Nested Structures",
+          "Union definition and initialization",
+          "Comparison of Structure and Union"
+        ]
+      },
+      {
+        "name": "Unit III: Pointers",
+        "topics": [
+          "Declaring and initializing pointers",
+          "Pointer expressions and scale factor",
+          "Pointers and arrays",
+          "Pointers and functions"
+        ]
+      },
+      {
+        "name": "Unit IV: File Management & Dynamic Mem",
+        "topics": [
+          "Defining, opening, closing a file",
+          "File handling functions",
+          "Command line arguments",
+          "Dynamic Memory (malloc, calloc, free, realloc)"
+        ]
+      }
+    ]
+  },
+  {
+    "subject_code": "CAM204-1C",
+    "title": "Database Management System",
+    "semester": 2,
+    "type": "Major Course • 4 Credits",
+    "icon_class": "fa-solid fa-database",
+    "units": [
+      {
+        "name": "Unit I: Intro to DBMS & Data Modeling",
+        "topics": [
+          "Database Models (Hierarchical, Relational)",
+          "Entity types, attributes and keys",
+          "ER diagrams"
+        ]
+      },
+      {
+        "name": "Unit II: Relational Database Model",
+        "topics": [
+          "Connectivity, Cardinality, Aggregation",
+          "Keys (Primary, Foreign, Candidate)",
+          "Relational Set Operators"
+        ]
+      },
+      {
+        "name": "Unit III: Introduction to SQL",
+        "topics": [
+          "SQL Statements: DDL, DML, DCL, TCL",
+          "Creating, Modifying and Deleting Tables",
+          "Queries: Insert, Select, Update, Delete"
+        ]
+      },
+      {
+        "name": "Unit IV: Advanced SQL",
+        "topics": [
+          "Logical operators (BETWEEN, IN, AND, OR)",
+          "Aggregate functions (Count, Sum, Avg)",
+          "Grouping, Having Clause",
+          "Joins (Self, Inner & Outer)"
+        ]
+      }
+    ]
+  },
+  {
+    "subject_code": "CAE202-1C",
+    "title": "Software Engineering",
+    "semester": 2,
+    "type": "Minor Course • 4 Credits",
+    "icon_class": "fa-solid fa-code-branch",
+    "units": [
+      {
+        "name": "Unit I: Intro to SE & Req Analysis",
+        "topics": [
+          "Software Process Models (RAD, Agile)",
+          "Software Requirement Specification (SRS)",
+          "Requirement Elicitation"
+        ]
+      },
+      {
+        "name": "Unit II: Managing Project & Design",
+        "topics": [
+          "Software Metrics & Estimation",
+          "Risk Analysis & Management",
+          "Component Level Design (Function, Object)",
+          "User Interface & Web App Design"
+        ]
+      },
+      {
+        "name": "Unit III: Software Coding & Testing",
+        "topics": [
+          "Coding Standard and Guidelines",
+          "Testing Strategies & Test Cases",
+          "White Box & Black Box Testing",
+          "Testing Tools"
+        ]
+      },
+      {
+        "name": "Unit IV: QA and Management",
+        "topics": [
+          "Software Quality Assurance (SQA)",
+          "Quality Standards (ISO 9000, CMM)",
+          "Software Maintenance Types",
+          "Version Control and Change Control"
+        ]
+      }
+    ]
+  },
+  {
+    "subject_code": "MDC202-1C",
+    "title": "Computer Oriented Num & Stat Methods",
+    "semester": 2,
+    "type": "MDC • 4 Credits",
+    "icon_class": "fa-solid fa-chart-line",
+    "units": [
+      {
+        "name": "Unit I: Numerical Errors",
+        "topics": [
+          "Types of errors (Absolute, Relative, Round Off)",
+          "Floating point numbers"
+        ]
+      },
+      {
+        "name": "Unit II: Numerical Interpolation",
+        "topics": [
+          "Interpolation & Extrapolation",
+          "Forward and Backward Differences",
+          "Newton’s Formula",
+          "Lagrange Interpolation"
+        ]
+      },
+      {
+        "name": "Unit III: Central Tendency & Dispersion",
+        "topics": [
+          "Types of Data (Discrete, Continuous)",
+          "Mean, Median, Mode",
+          "Range, Variance, Standard Deviation"
+        ]
+      },
+      {
+        "name": "Unit IV: Correlation and Regression",
+        "topics": [
+          "Correlation Types & Coefficients",
+          "Scatter Diagram, Karl Pearson’s Method",
+          "Spearman’s Rank Method",
+          "Regression lines"
+        ]
+      }
+    ]
+  },
+  {
+    "subject_code": "CAM205-2C",
+    "title": "Data Structures and Algorithms",
+    "semester": 3,
+    "type": "Major Course • 4 Credits",
+    "icon_class": "fa-solid fa-network-wired",
+    "units": [
+      {
+        "name": "Unit I: Intro to Data Structure & Array",
+        "topics": [
+          "Primitive vs Non-Primitive data structure",
+          "Array Operations (Insert, Delete, Search)"
+        ]
+      },
+      {
+        "name": "Unit II: Stack and Queue",
+        "topics": [
+          "Stack Operations (PUSH, POP, PEEP)",
+          "Infix-Prefix-Postfix conversions",
+          "Simple Queue and Circular Queue"
+        ]
+      },
+      {
+        "name": "Unit III: Linked List",
+        "topics": [
+          "Singly Linked List",
+          "Circular Linked List",
+          "Doubly Linked List Operations"
+        ]
+      },
+      {
+        "name": "Unit IV: Tree, Sorting & Searching",
+        "topics": [
+          "Binary Search Tree (Creation, Insert, Delete)",
+          "Tree Traversal (In, Pre, Post-Order)",
+          "Sorting (Insertion, Selection, Bubble, Quick)",
+          "Searching (Linear, Binary)"
+        ]
+      }
+    ]
+  },
+  {
+    "subject_code": "CAM206-2C",
+    "title": "Object Oriented Programming with C++",
+    "semester": 3,
+    "type": "Major Course • 4 Credits",
+    "icon_class": "fa-brands fa-cuttlefish",
+    "units": [
+      {
+        "name": "Unit I: OOP Concepts & C++ Basics",
+        "topics": [
+          "Procedural Vs. Object Oriented",
+          "I/O Operator, Variables, Data types"
+        ]
+      },
+      {
+        "name": "Unit II: Functions & Classes",
+        "topics": [
+          "Function Overloading & Inline Function",
+          "Access Specifiers (private, public)",
+          "Array of Objects"
+        ]
+      },
+      {
+        "name": "Unit III: Constructors & Inheritance",
+        "topics": [
+          "Types of Constructor & Destructor",
+          "Inheritance Types (Single, Multiple, Multilevel)",
+          "Virtual Base class, Abstract class"
+        ]
+      },
+      {
+        "name": "Unit IV: Operator Overloading & Exceptions",
+        "topics": [
+          "Overloading Unary/Binary Operators",
+          "Virtual Functions",
+          "Exception Handling (try, throw, catch)"
+        ]
+      }
+    ]
+  },
+  {
+    "subject_code": "CAM207-2C",
+    "title": "Advanced Database Management System",
+    "semester": 3,
+    "type": "Major Course • 4 Credits",
+    "icon_class": "fa-solid fa-server",
+    "units": [
+      {
+        "name": "Unit I: SQL Commands & Normalization",
+        "topics": [
+          "DDL, DML, DCL and TCL",
+          "Data Anomalies",
+          "1NF, 2NF, 3NF, BCNF, 4NF"
+        ]
+      },
+      {
+        "name": "Unit II: PL/SQL Overview",
+        "topics": [
+          "PL/SQL Architecture & Blocks",
+          "Control Structures (IF, CASE, LOOP)",
+          "Stored Procedures and Functions"
+        ]
+      },
+      {
+        "name": "Unit III: Exception Handling & Cursor",
+        "topics": [
+          "Built-in exceptions (ZERO_DIVIDE)",
+          "Working with Cursors (OPEN, FETCH)"
+        ]
+      },
+      {
+        "name": "Unit IV: Triggers & Index",
+        "topics": [
+          "Trigger Creation & Implementation",
+          "Index Creation (Unique Index)"
+        ]
+      }
+    ]
+  },
+  {
+    "subject_code": "CAM208-2C",
+    "title": "Python Programming",
+    "semester": 4,
+    "type": "Major Course • 4 Credits",
+    "icon_class": "fa-brands fa-python",
+    "units": [
+      {
+        "name": "Unit I: Intro to Python & Control Statements",
+        "topics": [
+          "Python Features & Interpreter",
+          "Data types, Variables, Operators",
+          "IF, ELIF, MATCH...CASE",
+          "WHILE, FOR Loops, break, continue"
+        ]
+      },
+      {
+        "name": "Unit II: Data Structures",
+        "topics": [
+          "Lists (append, insert, pop, slice)",
+          "Tuples (index, count)",
+          "Dictionaries (keys, values, nested)",
+          "Strings and Sets"
+        ]
+      },
+      {
+        "name": "Unit III: Functions & File Handling",
+        "topics": [
+          "Defining functions, Lambda functions",
+          "map, filter, reduce",
+          "File modes (read, write, append)",
+          "read(), write(), seek()"
+        ]
+      },
+      {
+        "name": "Unit IV: Classes, Exceptions & Libraries",
+        "topics": [
+          "Classes, Encapsulation, Inheritance",
+          "Try-except-else-finally block",
+          "Importing Pandas, Numpy, Matplotlib"
+        ]
+      }
+    ]
+  },
+  {
+    "subject_code": "CAM209-2C",
+    "title": "Web Design and Development",
+    "semester": 4,
+    "type": "Major Course • 4 Credits",
+    "icon_class": "fa-brands fa-php",
+    "units": [
+      {
+        "name": "Unit I: Intro to PHP",
+        "topics": [
+          "Relationship between PHP, MySQL, Apache",
+          "Variables, Data types, Type casting",
+          "Control and Looping Statements"
+        ]
+      },
+      {
+        "name": "Unit II: Array and User Define Functions",
+        "topics": [
+          "Numeric and Associated Array",
+          "Function parameters & Return statement",
+          "Built-in String & Math functions"
+        ]
+      },
+      {
+        "name": "Unit III: Form Handling",
+        "topics": [
+          "HTTP methods: GET and POST",
+          "Server-side validation",
+          "Date and Super-Global Variables"
+        ]
+      },
+      {
+        "name": "Unit IV: Cookies and MySQL",
+        "topics": [
+          "Create, fetch, delete cookies",
+          "MySQL structure and syntax",
+          "Integration of PHP with MySQL (CRUD)"
+        ]
+      }
+    ]
+  },
+  {
+    "subject_code": "CAM210-2C",
+    "title": "Operating System",
+    "semester": 4,
+    "type": "Major Course • 4 Credits",
+    "icon_class": "fa-brands fa-linux",
+    "units": [
+      {
+        "name": "Unit I: OS & Process Management",
+        "topics": [
+          "Process States & PCB",
+          "Schedulers",
+          "Process Scheduling Algorithms (FCFS, SJF, RR)"
+        ]
+      },
+      {
+        "name": "Unit II: Deadlock, Memory & File",
+        "topics": [
+          "Deadlock Detection & Recovery",
+          "Swapping & Paging",
+          "Disk Scheduling algorithms"
+        ]
+      },
+      {
+        "name": "Unit III: Linux Commands",
+        "topics": [
+          "Basic commands (mkdir, cp, ls, ps)",
+          "Finding Patterns (grep)",
+          "Sorting and Comparing Files"
+        ]
+      },
+      {
+        "name": "Unit IV: Basic Shell Script",
+        "topics": [
+          "Arithmetic operations in script",
+          "Loops (for, while, until)",
+          "Conditional Statements (if else)"
+        ]
+      }
+    ]
+  },
+  {
+    "subject_code": "CAE203-2C",
+    "title": "Data Communication and Network",
+    "semester": 4,
+    "type": "Minor Course • 4 Credits",
+    "icon_class": "fa-solid fa-wifi",
+    "units": [
+      {
+        "name": "Unit I: Analog/Digital Signals",
+        "topics": [
+          "Bandwidth, Throughput, Latency",
+          "Transmission modes (Simplex, Duplex)",
+          "Error Detection (Parity, Checksum, CRC)"
+        ]
+      },
+      {
+        "name": "Unit II: Intro to Networking",
+        "topics": [
+          "Host, Workstation, Server",
+          "Types (LAN, WAN, MAN)",
+          "Physical topologies (bus, star, ring)"
+        ]
+      },
+      {
+        "name": "Unit III: OSI Model and Guided Media",
+        "topics": [
+          "OSI model layers",
+          "TCP/IP protocol suite",
+          "Guided Media (Twisted pair, Fiber optics)",
+          "Unguided Media (Radio, Bluetooth, Wi-Fi)"
+        ]
+      },
+      {
+        "name": "Unit IV: IP Protocol",
+        "topics": [
+          "IP v4, IP v6 Addressing",
+          "DNS, Email, FTP, HTTP",
+          "Network Devices (Hubs, Switches, Routers)"
+        ]
+      }
+    ]
+  },
+  {
+    "subject_code": "CAM301-3C",
+    "title": "Object Oriented Programming using Java",
+    "semester": 5,
+    "type": "Major Course • 4 Credits",
+    "icon_class": "fa-brands fa-java",
+    "units": [
+      {
+        "name": "Unit I: Intro to Java & Basics",
+        "topics": [
+          "JDK, JRE, and JVM architecture",
+          "Data types, Variables, Operators",
+          "Control statements (Conditional & Loops)"
+        ]
+      },
+      {
+        "name": "Unit II: OOP Concepts",
+        "topics": [
+          "Classes, Objects, Constructors",
+          "Inheritance (Single, Multilevel)",
+          "Polymorphism, Abstraction, Encapsulation"
+        ]
+      },
+      {
+        "name": "Unit III: Exceptions & Collections",
+        "topics": [
+          "Checked vs. Unchecked exceptions",
+          "try, catch, finally, custom exceptions",
+          "List, Set, Map interfaces (ArrayList, HashMap)"
+        ]
+      },
+      {
+        "name": "Unit IV: Multithreading & GUI",
+        "topics": [
+          "Thread lifecycle and Synchronization",
+          "File handling using java.io",
+          "GUI Programming with AWT components"
+        ]
+      }
+    ]
+  },
+  {
+    "subject_code": "CAM302-3C",
+    "title": "Next Generation Database",
+    "semester": 5,
+    "type": "Major Course • 4 Credits",
+    "icon_class": "fa-solid fa-leaf",
+    "units": [
+      {
+        "name": "Unit I: Intro to NoSQL and MongoDB",
+        "topics": [
+          "Relational vs. NoSQL Databases",
+          "MongoDB Installation and Setup",
+          "MongoDB Shell (mongosh)"
+        ]
+      },
+      {
+        "name": "Unit II: Architecture & CRUD",
+        "topics": [
+          "Data Model (Documents, Collections)",
+          "Replica Sets, Sharding",
+          "Create, Read, Update, Delete",
+          "Indexing and Performance Tuning"
+        ]
+      },
+      {
+        "name": "Unit III: Data Modeling",
+        "topics": [
+          "Schema Design Best Practices",
+          "Embedding vs. Referencing",
+          "Schema Validation Implementation"
+        ]
+      },
+      {
+        "name": "Unit IV: Aggregation Framework",
+        "topics": [
+          "Pipeline Stages (Match, Group, Project)",
+          "Complex Aggregation Scenarios",
+          "Performance Tuning"
+        ]
+      }
+    ]
+  },
+  {
+    "subject_code": "CAM303-3C",
+    "title": "Software Testing",
+    "semester": 5,
+    "type": "Major Course • 4 Credits",
+    "icon_class": "fa-solid fa-bug",
+    "units": [
+      {
+        "name": "Unit I: Intro to Software Testing",
+        "topics": [
+          "SDLC and STLC",
+          "White Box, Black Box, Grey Box",
+          "Levels (Unit, Integration, System, Acceptance)",
+          "Smoke and Sanity Testing"
+        ]
+      },
+      {
+        "name": "Unit II: Test Case Design",
+        "topics": [
+          "Equivalence Partitioning, BVA",
+          "Decision Table & State Transition",
+          "Test Case Format and Data Preparation"
+        ]
+      },
+      {
+        "name": "Unit III: Advanced Testing & QA",
+        "topics": [
+          "Performance, Security, Usability Testing",
+          "Compatibility Testing",
+          "Quality Control vs Quality Assurance"
+        ]
+      },
+      {
+        "name": "Unit IV: Defect Tracking & Planning",
+        "topics": [
+          "Bug Life Cycle Stages",
+          "Test Organization & Planning",
+          "Detailed Test Design"
+        ]
+      }
+    ]
+  },
+  {
+    "subject_code": "CAE301-3C",
+    "title": "Enterprise Resource Planning",
+    "semester": 5,
+    "type": "Minor Course • 4 Credits",
+    "icon_class": "fa-solid fa-industry",
+    "units": [
+      {
+        "name": "Unit I: Intro to ERP",
+        "topics": [
+          "Evolution of ERP & Structure",
+          "Two-tier & Three-tier Architecture",
+          "Demand Management"
+        ]
+      },
+      {
+        "name": "Unit II: Functional Modules",
+        "topics": [
+          "Manufacturing, Financial, Distribution",
+          "Master Production Scheduling Module",
+          "Purchase Control Module"
+        ]
+      },
+      {
+        "name": "Unit III: ERP Implementation",
+        "topics": [
+          "Implementation Life Cycle",
+          "Phases of Implementation",
+          "Reasons for failure"
+        ]
+      },
+      {
+        "name": "Unit IV: ERP Vendor Analysis",
+        "topics": [
+          "Major Vendors (SAP, Oracle, PeopleSoft)",
+          "Case Study: Nestle GLOBE",
+          "Case Study: Maruti Suzuki"
+        ]
+      }
+    ]
+  },
+  {
+    "subject_code": "CAE302-3C",
+    "title": "Cyber Security",
+    "semester": 5,
+    "type": "Minor Course • 4 Credits",
+    "icon_class": "fa-solid fa-shield-halved",
+    "units": [
+      {
+        "name": "Unit I: Cyberspace Definition",
+        "topics": [
+          "Architecture of cyberspace",
+          "Regulation of cyberspace",
+          "Issues and challenges of cyber security"
+        ]
+      },
+      {
+        "name": "Unit II: Classification of cybercrimes",
+        "topics": [
+          "Financial frauds, Social engineering",
+          "Malware, Ransomware, Zero day attacks",
+          "Remedial and mitigation measures"
+        ]
+      },
+      {
+        "name": "Unit III: Social Networks Security",
+        "topics": [
+          "Social media privacy issues",
+          "Reporting of inappropriate content",
+          "Laws and best practices"
+        ]
+      },
+      {
+        "name": "Unit IV: E-Commerce & Payments",
+        "topics": [
+          "Digital payments components & frauds",
+          "RBI guidelines on digital payments",
+          "IT Act 2000 and amendments"
+        ]
+      }
+    ]
+  },
+  {
+    "subject_code": "CAM304-3C",
+    "title": "Data Warehousing and Data Mining",
+    "semester": 6,
+    "type": "Major Course • 4 Credits",
+    "icon_class": "fa-solid fa-warehouse",
+    "units": [
+      {
+        "name": "Unit I: Data Warehousing & Architecture",
+        "topics": [
+          "Introduction and definition of Data Warehouse",
+          "Differences between OLTP and Data Warehouse (OLTP vs OLAP)",
+          "Constructing a separate Data Warehouse",
+          "Three Tier Data Warehouse Architecture and components",
+          "Data Cube and OLAP operations for multidimensional data",
+          "OLAP servers (ROLAP, MOLAP, HOLAP)",
+          "ETL process, data profiling and change data capture",
+          "Data cleaning, integration and transformation",
+          "Operational Data Store (ODS) and metadata"
+        ]
+      },
+      {
+        "name": "Unit II: Data Warehouse Design",
+        "topics": [
+          "Dimensional Modeling and its benefits",
+          "Fact tables, fact table keys and granularity",
+          "Dimension tables and dimension table keys",
+          "Four step dimensional design process and three fundamental grains",
+          "Surrogate keys and date dimension",
+          "Multiple currencies and units of measure",
+          "Factless and consolidated fact tables",
+          "Slowly changing dimensions (SCD) and handling techniques",
+          "Concept hierarchies, degenerate and conformed dimensions",
+          "Snowflake Schema"
+        ]
+      },
+      {
+        "name": "Unit III: Data Mining",
+        "topics": [
+          "Introduction to Data Mining",
+          "KDD and the Knowledge Discovery Process",
+          "Mining frequent patterns and associations",
+          "Association Rules Mining",
+          "Market Basket Analysis",
+          "Apriori Algorithm"
+        ]
+      },
+      {
+        "name": "Unit IV: Classification, Prediction & Clustering",
+        "topics": [
+          "Classification and Prediction methods compared",
+          "Naive Bayesian Classification",
+          "Linear and Non-Linear Regression",
+          "Introduction to Cluster Analysis and types of data",
+          "k-means partitioning method"
+        ]
+      }
+    ]
+  },
+  {
+    "subject_code": "CAM305-3C",
+    "title": "Mobile Application Development",
+    "semester": 6,
+    "type": "Major Course • 4 Credits",
+    "icon_class": "fa-solid fa-mobile-screen-button",
+    "units": [
+      {
+        "name": "Unit I: Mobile Computing & Getting Started with Android",
+        "topics": [
+          "Overview and importance of Mobile Computing",
+          "Types of mobile apps: Native, Web and Hybrid",
+          "Introduction to the Android platform",
+          "Mobile application development life cycle",
+          "Android OS and its Architecture",
+          "Setting up Android Studio and SDK",
+          "Structure of an Android project and app components"
+        ]
+      },
+      {
+        "name": "Unit II: XML & User Interface Design",
+        "topics": [
+          "XML basics, structure, elements and documents",
+          "Storing and extracting data to/from XML",
+          "Basic UI components (TextView, Button, ImageView)"
+        ]
+      },
+      {
+        "name": "Unit III: Layouts, Activities, Intents & SQLite",
+        "topics": [
+          "LinearLayout, RelativeLayout and ConstraintLayout",
+          "Handling user input with buttons and text fields",
+          "Activities and the Activity Lifecycle",
+          "Implicit and Explicit Intents and passing data",
+          "SQLite database for local storage"
+        ]
+      },
+      {
+        "name": "Unit IV: Networking, Multimedia, Testing & Publishing",
+        "topics": [
+          "Network requests and WebView",
+          "Playing audio/video, images and camera capture",
+          "Debugging in Android Studio and Logcat",
+          "Testing on emulator and real devices",
+          "APK generation, signing and Google Play publishing",
+          "App updates and versioning"
+        ]
+      }
+    ]
+  },
+  {
+    "subject_code": "CAM306-3C",
+    "title": "Network Security",
+    "semester": 6,
+    "type": "Major Course • 4 Credits",
+    "icon_class": "fa-solid fa-user-shield",
+    "units": [
+      {
+        "name": "Unit I: Introduction to Network Security",
+        "topics": [
+          "Definition and importance of Network Security",
+          "Goals: confidentiality, integrity and availability",
+          "Challenges of computer security",
+          "Security Services vs Security Mechanisms",
+          "Network Security Models",
+          "OSI and TCP/IP models"
+        ]
+      },
+      {
+        "name": "Unit II: Cryptography",
+        "topics": [
+          "Cryptography and Cryptanalysis",
+          "Substitution techniques and Simple Substitution Cipher",
+          "Caesar, Monoalphabetic and Polyalphabetic Ciphers",
+          "Steganography",
+          "Symmetric vs Asymmetric Encryption"
+        ]
+      },
+      {
+        "name": "Unit III: Security Threats",
+        "topics": [
+          "Intruders, Intrusion Detection and Password Management",
+          "Viruses, related threats and countermeasures",
+          "Worms",
+          "Distributed Denial of Service (DDoS) attacks"
+        ]
+      },
+      {
+        "name": "Unit IV: Network Security Protocols & Firewalls",
+        "topics": [
+          "SSL/TLS, SSH, HTTPS and IPsec",
+          "Email security: PGP and S/MIME",
+          "Virtual Private Networks (VPN) overview",
+          "Need, characteristics and types of Firewalls",
+          "Firewall basing"
+        ]
+      }
+    ]
+  },
+  {
+    "subject_code": "CAE303-3C",
+    "title": "Digital Marketing Management",
+    "semester": 6,
+    "type": "Minor Course • 4 Credits",
+    "icon_class": "fa-solid fa-bullhorn",
+    "units": [
+      {
+        "name": "Unit I: Introduction to Digital Marketing",
+        "topics": [
+          "Definition and scope of Digital Marketing",
+          "Earned, owned and paid digital media",
+          "Evolution of the digital ecosystem",
+          "Key components: SEO, SEM, Social Media, Email Marketing",
+          "Introduction to Digital Analytics"
+        ]
+      },
+      {
+        "name": "Unit II: Marketing Using Digital Forms",
+        "topics": [
+          "On-site and off-site SEO and keyword research",
+          "Search Engine Marketing and Google AdWords campaigns",
+          "Email and Mobile Marketing",
+          "Digital advertising channels: display, video, social ads",
+          "Conversion Optimization"
+        ]
+      },
+      {
+        "name": "Unit III: Managing Digital Media",
+        "topics": [
+          "Social media platforms (Facebook, Instagram, Twitter, LinkedIn, YouTube)",
+          "Content creation for digital platforms",
+          "Social Media Advertising",
+          "Campaign monitoring and analysis",
+          "Long-term digital media strategies"
+        ]
+      },
+      {
+        "name": "Unit IV: Tools for Brand Building & Marketing",
+        "topics": [
+          "Tools for SEO, SEM, social media, email and web analytics",
+          "Data analytics and reporting with Google Analytics",
+          "Brand building through digital platforms",
+          "Monitoring digital performance",
+          "Continuous improvement of digital marketing"
+        ]
+      }
+    ]
+  },
+  {
+    "subject_code": "AEC301-3C",
+    "title": "Communication and Soft Skills for Professional Success",
+    "semester": 6,
+    "type": "AEC • 2 Credits",
+    "icon_class": "fa-solid fa-people-arrows",
+    "units": [
+      {
+        "name": "Unit I: Preparing for the World of Work",
+        "topics": [
+          "Application letter and Cover letter",
+          "Resume crafting: layouts and components",
+          "Group Discussion: process, do’s and don’ts",
+          "Personality traits and group etiquette",
+          "Job interviews: stages, types, preparation and follow-up",
+          "Body language and Negotiation"
+        ]
+      },
+      {
+        "name": "Unit II: Professional Skills",
+        "topics": [
+          "Communication by writing and speaking",
+          "Ten steps for written and oral expression",
+          "Critical thinking and the seven-step plan",
+          "Leadership skills, trust and empowerment"
+        ]
+      },
+      {
+        "name": "Unit III: Basic Skills in Research and Documentation",
+        "topics": [
+          "Characteristics of research and data collection tools",
+          "Technical proposals: purpose, types and structure",
+          "Questionnaires and schedules",
+          "Using graphics: tables, bar graphs, pie charts",
+          "Organizational charts and AI-assisted graphics"
+        ]
+      }
+    ]
+  },
+  {
+    "subject_code": "SEC351-3C",
+    "title": "Internship",
+    "semester": 6,
+    "type": "SEC • 4 Credits",
+    "icon_class": "fa-solid fa-briefcase",
+    "units": [
+      {
+        "name": "Industrial Internship (minimum 120 hours)",
+        "topics": [
+          "Industrial utility project at an organization (minimum 120 hours)",
+          "Project type: Software Development",
+          "Project type: Mobile Application Development",
+          "Project type: Software Testing"
+        ]
+      }
+    ]
+  }
+]

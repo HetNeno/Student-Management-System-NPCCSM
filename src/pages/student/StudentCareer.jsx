@@ -1,114 +1,177 @@
-import { useState, useRef, useEffect } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { useOutletContext, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { useSyllabus } from '../../context/SyllabusContext';
-import { getSubjectsForSemester } from '../../data/syllabusDatabase';
-import { askGemini } from '../../lib/chatbotApi';
+import { askAssistant } from '../../lib/apiClient';
+import NovaAvatar from '../../components/chat/NovaAvatar';
+import FormattedText from '../../components/chat/FormattedText';
 
-const SUGGESTED_PROMPTS = [
-  'Recommend the best resume project for BCA Semester 5',
-  'What are the most frequent technical interview questions for Java & OOP?',
-  'How do I prepare for Database & SQL coding rounds?',
-  'What skills should I learn this semester to be placement-ready?',
-  'Give me a 30-day study plan for my current semester subjects',
+const SUGGESTED_PROMPTS = (semester) => [
+  `Which subjects and units are in my Semester ${semester} syllabus?`,
+  'What did faculty cover recently and what notes did they add?',
+  'Are there any notices or deadlines I should know about?',
+  'Make me a 2-week revision plan for my semester subjects',
+  'What skills should I build this semester to be placement-ready?',
 ];
+
+// What Nova is doing on the server, shown while waiting.
+const STAGES = [
+  { at: 0, text: 'Searching your Semester {s} course material…' },
+  { at: 1400, text: 'Checking faculty notes and notices…' },
+  { at: 3000, text: 'Writing an accurate answer…' },
+];
+
+const prefersReducedMotion = () =>
+  typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+const now = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+/** Reveals the answer progressively (instantly with reduced motion). */
+function useTypewriter(fullText, enabled, onTick) {
+  const [shown, setShown] = useState(enabled ? '' : fullText);
+  useEffect(() => {
+    if (!enabled) {
+      setShown(fullText);
+      return undefined;
+    }
+    let i = 0;
+    const step = Math.max(2, Math.round(fullText.length / 180)); // ~3s max
+    const id = setInterval(() => {
+      i = Math.min(fullText.length, i + step);
+      setShown(fullText.slice(0, i));
+      onTick?.();
+      if (i >= fullText.length) clearInterval(id);
+    }, 16);
+    return () => clearInterval(id);
+  }, [fullText, enabled]); // eslint-disable-line react-hooks/exhaustive-deps
+  return shown;
+}
+
+function AssistantMessage({ msg, onRetry, busy, onTick }) {
+  const animate = msg.animate && !prefersReducedMotion();
+  const shown = useTypewriter(msg.text, animate, onTick);
+  const done = shown.length >= msg.text.length;
+
+  return (
+    <div className="chat-message-in mr-auto flex max-w-[94%] gap-3 sm:max-w-[85%]">
+      <NovaAvatar size={32} />
+      <div className="min-w-0">
+        <div
+          className={`rounded-2xl rounded-tl-none border p-4 text-[13px] leading-relaxed ${
+            msg.error ? 'border-rose-200 bg-rose-50 text-rose-800' : 'border-stone-200/70 bg-[#FAF7F5] text-stone-800'
+          }`}
+        >
+          {msg.error ? (
+            <>
+              <i className="fa-solid fa-circle-exclamation mr-1.5" />
+              {msg.text}
+              {msg.retryQuery && (
+                <button type="button" disabled={busy} onClick={() => onRetry(msg.retryQuery)} className="mt-2 block text-[11px] font-bold text-rose-700 underline disabled:opacity-50">
+                  Try again
+                </button>
+              )}
+            </>
+          ) : (
+            <div className={done ? '' : 'type-caret'}>
+              <FormattedText text={shown} />
+            </div>
+          )}
+
+          {done && !msg.error && msg.grounded !== undefined && (
+            <div className="stage-in mt-3 border-t border-stone-200/70 pt-2 text-[10px] font-semibold">
+              {msg.grounded ? (
+                <span className="text-emerald-700">
+                  <i className="fa-solid fa-shield-halved mr-1" />
+                  Based on NPCCSM material{msg.sources?.length ? `: ${msg.sources.join(' · ')}` : ''}
+                </span>
+              ) : (
+                <span className="text-amber-700">
+                  <i className="fa-solid fa-circle-info mr-1" />
+                  Not found in NPCCSM material. Treat as general guidance and confirm with your faculty.
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+        <div className="mt-1 px-1 text-[10px] font-semibold text-stone-400">{msg.timestamp}</div>
+      </div>
+    </div>
+  );
+}
+
+function ThinkingBubble({ semester }) {
+  const [stage, setStage] = useState(0);
+  useEffect(() => {
+    const timers = STAGES.slice(1).map((s, i) => setTimeout(() => setStage(i + 1), s.at));
+    return () => timers.forEach(clearTimeout);
+  }, []);
+
+  return (
+    <div className="chat-message-in mr-auto flex max-w-[85%] gap-3" role="status" aria-label="Nova is thinking">
+      <NovaAvatar size={32} thinking />
+      <div className="rounded-2xl rounded-tl-none border border-stone-200/70 bg-[#FAF7F5] px-4 py-3">
+        <div className="flex items-center gap-1.5">
+          <span className="chat-dot h-1.5 w-1.5 rounded-full bg-[#8B2635]/70" />
+          <span className="chat-dot h-1.5 w-1.5 rounded-full bg-[#8B2635]/70" />
+          <span className="chat-dot h-1.5 w-1.5 rounded-full bg-[#8B2635]/70" />
+        </div>
+        <p key={stage} className="stage-in mt-1.5 text-[11px] font-semibold text-stone-500">
+          {STAGES[stage].text.replace('{s}', semester)}
+        </p>
+      </div>
+    </div>
+  );
+}
 
 export default function StudentCareer() {
   const { semester } = useOutletContext();
   const { user } = useAuth();
-  const { state } = useSyllabus();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const subjects = getSubjectsForSemester(semester);
+  const welcome = () => ({
+    id: 'welcome',
+    role: 'assistant',
+    text: `Hello ${user?.name || 'there'}! I'm **Nova**, your NPCCSM study and career assistant for **BCA Semester ${semester}**.\n- I answer syllabus, lecture, notice and material questions from your college's own data, and tell you when something isn't there.\n- If something you say is incorrect, I'll point it out and explain.`,
+    timestamp: now(),
+  });
 
-  const [messages, setMessages] = useState([
-    {
-      id: 'welcome',
-      role: 'assistant',
-      text: `Hello ${user?.name || 'there'}! I'm Nova, your NPCCSM Career & Learning Advisor. Ask me anything about project ideas, interview preparation, BCA placement strategies, or topics in your Semester ${semester} syllabus.`,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    },
-  ]);
+  const [messages, setMessages] = useState(() => [welcome()]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const messagesEndRef = useRef(null);
+  const logRef = useRef(null);
   const inputRef = useRef(null);
+  const sentPrefill = useRef(false);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const el = logRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
   };
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, loading]);
+  useEffect(scrollToBottom, [messages, loading]);
 
   const handleSend = async (textToSend) => {
-    const query = (textToSend || input).trim();
+    const query = (textToSend ?? input).trim();
     if (!query || loading) return;
 
-    const userMsg = {
-      id: String(Date.now()),
-      role: 'user',
-      text: query,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    };
+    const history = messages
+      .filter((m) => m.id !== 'welcome' && !m.error)
+      .slice(-6)
+      .map((m) => ({ role: m.role === 'user' ? 'user' : 'assistant', text: m.text }));
 
-    setMessages((prev) => [...prev, userMsg]);
+    setMessages((prev) => [...prev, { id: `u${Date.now()}`, role: 'user', text: query, timestamp: now() }]);
     setInput('');
     setLoading(true);
 
     try {
-      const activeSubject = subjects[0] || null;
-      const botAnswer = await askGemini({
-        prompt: query,
-        subject: activeSubject,
-        semester,
-        unitName: 'Career & Curriculum Advisor',
-        knowledgeBase: state,
-        conversation: messages.map((m) => ({
-          role: m.role === 'user' ? 'user' : 'bot',
-          text: m.text,
-        })),
-      });
-
+      const res = await askAssistant({ query, history });
+      const sources = [...new Set((res.chunks || []).map((c) => c.source))].slice(0, 3);
       setMessages((prev) => [
         ...prev,
-        {
-          id: String(Date.now() + 1),
-          role: 'assistant',
-          text: botAnswer,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        },
+        { id: `a${Date.now()}`, role: 'assistant', text: res.answer, sources, grounded: !!res.grounded, animate: true, timestamp: now() },
       ]);
     } catch (err) {
-      // Clean, structured guidance
-      let fallbackText = `Tailored advice for BCA Semester ${semester}:
-
-1. Practical Application: Build end-to-end applications demonstrating clean OOP principles and database integrations.
-2. Core Theory: Master Relational Modeling, Indexing, and Transaction management (ACID properties).
-3. Portfolio Setup: Document every project on GitHub with architectural diagrams and a clear README.`;
-
-      if (query.toLowerCase().includes('project')) {
-        fallbackText = `Recommended Projects for Semester ${semester}:
-
-• Enterprise Management System (Java + MySQL): Demonstrates schema design, JDBC, and transaction handling.
-• Full-Stack API Service (Node.js/Express + PostgreSQL): Demonstrates JWT authentication, CORS, and role security.
-• Interactive Data Analytics Dashboard (Python + SQL): Demonstrates query optimization and analytics reporting.`;
-      } else if (query.toLowerCase().includes('interview') || query.toLowerCase().includes('question')) {
-        fallbackText = `Key Technical Interview Questions for your semester:
-
-• OOP: Explain Abstraction vs. Interface with real-world scenarios. How does Runtime Polymorphism work?
-• Java: What is the difference between Heap and Stack memory? How does Garbage Collection function?
-• DBMS: Explain B-Tree Indexing and why Primary Keys enforce clustered index order.`;
-      }
-
       setMessages((prev) => [
         ...prev,
-        {
-          id: String(Date.now() + 1),
-          role: 'assistant',
-          text: fallbackText,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        },
+        { id: `e${Date.now()}`, role: 'assistant', error: true, retryQuery: query, text: err.message || 'Nova is unavailable right now. Please try again.', timestamp: now() },
       ]);
     } finally {
       setLoading(false);
@@ -116,148 +179,111 @@ export default function StudentCareer() {
     }
   };
 
+  // Deep links from the syllabus / dashboard: /student/career?q=...
+  useEffect(() => {
+    const q = searchParams.get('q');
+    if (q && !sentPrefill.current) {
+      sentPrefill.current = true;
+      setSearchParams({}, { replace: true });
+      handleSend(q);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
-    <div className="mx-auto max-w-4xl h-[calc(100vh-8rem)] flex flex-col gap-4">
-      {/* ── Top Advisor Header with Glassmorphism ── */}
-      <div className="rounded-2xl border border-stone-200/70 bg-white/85 backdrop-blur-md p-4 shadow-[0_8px_30px_rgb(0,0,0,0.02)] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+    <div className="mx-auto flex h-[calc(100vh-8rem)] max-w-4xl flex-col gap-4">
+      <div className="flex shrink-0 flex-col justify-between gap-3 rounded-2xl border border-stone-200/70 bg-white/85 p-4 shadow-[0_8px_30px_rgb(0,0,0,0.02)] backdrop-blur-md sm:flex-row sm:items-center">
         <div className="flex items-center gap-3.5">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#8B2635] text-white shadow-md shadow-[#8B2635]/20">
-            <i className="fa-solid fa-brain text-base" />
-          </div>
+          <NovaAvatar size={44} thinking={loading} />
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-sm font-black text-stone-900 tracking-tight">
-                Nova &middot; Career &amp; Academic Advisor
-              </h1>
-              <span className="rounded-full bg-stone-100 border border-stone-200/80 px-2 py-0.5 text-[10px] font-bold text-stone-600">
-                AI Active
+              <h1 className="text-sm font-black tracking-tight text-stone-900">Nova · Study &amp; Career Assistant</h1>
+              <span className="flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                <span className="pulse-ring h-1.5 w-1.5 rounded-full bg-emerald-500" /> Online
               </span>
             </div>
-            <p className="text-xs font-medium text-stone-500 mt-0.5">
-              Personalized for BCA Semester {semester} curriculum &middot; Ask about placements, projects, or concepts
-            </p>
+            <p className="mt-0.5 text-xs font-medium text-stone-500">Answers from your Semester {semester} syllabus, lectures, notices and materials</p>
           </div>
         </div>
-
         <button
           type="button"
-          onClick={() => {
-            setMessages([
-              {
-                id: 'welcome',
-                role: 'assistant',
-                text: `Conversation reset. How can I assist your career or studies in Semester ${semester} today?`,
-                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-              },
-            ]);
-          }}
-          className="self-start sm:self-auto rounded-xl border border-stone-200/90 bg-white px-3 py-1.5 text-xs font-bold text-stone-600 hover:bg-stone-100 hover:text-stone-900 transition-colors shadow-sm"
+          onClick={() => setMessages([welcome()])}
+          className="self-start rounded-xl border border-stone-200/90 bg-white px-3 py-1.5 text-xs font-bold text-stone-600 shadow-sm transition-colors hover:bg-stone-100 hover:text-stone-900 sm:self-auto"
         >
-          <i className="fa-solid fa-rotate-right mr-1.5 text-stone-400 text-[10px]" />
-          Reset Chat
+          <i className="fa-solid fa-rotate-right mr-1.5 text-[10px] text-stone-400" />
+          New chat
         </button>
       </div>
 
-      {/* ── Chat Messages Stream Container ── */}
-      <div className="flex-1 rounded-2xl border border-stone-200/70 bg-white/85 backdrop-blur-md p-5 md:p-6 shadow-[0_8px_30px_rgb(0,0,0,0.02)] overflow-y-auto custom-scrollbar flex flex-col space-y-4">
-        {messages.map((msg) => {
-          const isUser = msg.role === 'user';
-          return (
-            <div
-              key={msg.id}
-              className={`flex gap-3 max-w-[85%] ${isUser ? 'ml-auto flex-row-reverse' : 'mr-auto'}`}
-            >
-              <div
-                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold shadow-sm ${
-                  isUser
-                    ? 'bg-stone-800 text-white'
-                    : 'bg-[#8B2635] text-white shadow-[#8B2635]/20'
-                }`}
-              >
-                {isUser ? <i className="fa-solid fa-user text-[11px]" /> : <i className="fa-solid fa-brain text-[11px]" />}
-              </div>
-
+      <div
+        ref={logRef}
+        role="log"
+        aria-live="polite"
+        aria-label="Conversation with Nova"
+        className="custom-scrollbar flex flex-1 flex-col space-y-4 overflow-y-auto overscroll-contain rounded-2xl border border-stone-200/70 bg-white/85 p-4 shadow-[0_8px_30px_rgb(0,0,0,0.02)] backdrop-blur-md md:p-6"
+      >
+        {messages.map((msg) =>
+          msg.role === 'user' ? (
+            <div key={msg.id} className="chat-message-in ml-auto flex max-w-[92%] flex-row-reverse gap-3 sm:max-w-[80%]">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-stone-800 text-white shadow-sm" aria-hidden="true">
+                <i className="fa-solid fa-user text-[11px]" />
+              </span>
               <div>
-                <div
-                  className={`rounded-2xl p-4 text-xs leading-relaxed whitespace-pre-wrap ${
-                    isUser
-                      ? 'bg-[#8B2635] text-white rounded-tr-none shadow-sm font-medium'
-                      : 'bg-[#FAF7F5] border border-stone-200/70 text-stone-800 rounded-tl-none font-medium'
-                  }`}
-                >
-                  {msg.text}
-                </div>
-                <div
-                  className={`text-[10px] font-semibold text-stone-400 mt-1 px-1 ${
-                    isUser ? 'text-right' : 'text-left'
-                  }`}
-                >
-                  {msg.timestamp}
-                </div>
+                <div className="whitespace-pre-wrap rounded-2xl rounded-tr-none bg-[#8B2635] p-4 text-[13px] font-medium leading-relaxed text-white shadow-sm">{msg.text}</div>
+                <div className="mt-1 px-1 text-right text-[10px] font-semibold text-stone-400">{msg.timestamp}</div>
               </div>
             </div>
-          );
-        })}
-
-        {loading && (
-          <div className="flex gap-3 mr-auto max-w-[80%]">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#8B2635] text-white shadow-sm">
-              <i className="fa-solid fa-brain text-[11px]" />
-            </div>
-            <div className="rounded-2xl rounded-tl-none border border-stone-200/70 bg-[#FAF7F5] p-3 flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-stone-500 animate-bounce" />
-              <span className="h-1.5 w-1.5 rounded-full bg-stone-500 animate-bounce [animation-delay:0.2s]" />
-              <span className="h-1.5 w-1.5 rounded-full bg-stone-500 animate-bounce [animation-delay:0.4s]" />
-            </div>
-          </div>
+          ) : (
+            <AssistantMessage key={msg.id} msg={msg} busy={loading} onRetry={handleSend} onTick={scrollToBottom} />
+          )
         )}
-
-        <div ref={messagesEndRef} />
+        {loading && <ThinkingBubble semester={semester} />}
       </div>
 
-      {/* ── Suggested Prompt Chips ── */}
-      {messages.length <= 2 && (
-        <div className="flex gap-2 overflow-x-auto pb-1 custom-scrollbar shrink-0">
-          {SUGGESTED_PROMPTS.map((prompt) => (
+      {messages.length <= 2 && !loading && (
+        <div className="custom-scrollbar flex shrink-0 gap-2 overflow-x-auto pb-1">
+          {SUGGESTED_PROMPTS(semester).map((prompt) => (
             <button
               key={prompt}
               type="button"
               onClick={() => handleSend(prompt)}
-              className="shrink-0 rounded-xl border border-stone-200 bg-white/90 backdrop-blur-sm px-3 py-1.5 text-xs font-bold text-stone-700 hover:border-[#8B2635] hover:text-[#8B2635] transition-all shadow-sm"
+              className="shrink-0 rounded-xl border border-stone-200 bg-white/90 px-3 py-1.5 text-xs font-bold text-stone-700 shadow-sm transition-all hover:border-[#8B2635] hover:text-[#8B2635]"
             >
-              <i className="fa-solid fa-arrow-right-long mr-1.5 text-stone-400 text-[10px]" />
+              <i className="fa-solid fa-arrow-right-long mr-1.5 text-[10px] text-stone-400" />
               {prompt}
             </button>
           ))}
         </div>
       )}
 
-      {/* ── Input Box ── */}
-      <div className="rounded-xl border border-stone-200/80 bg-white/90 backdrop-blur-md p-2 shadow-sm flex items-center gap-2 shrink-0">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleSend();
+        }}
+        className="chat-input-wrapper flex shrink-0 items-center gap-2 rounded-xl border border-stone-200/80 bg-white/90 p-2 shadow-sm backdrop-blur-md"
+      >
         <input
           ref={inputRef}
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              handleSend();
-            }
-          }}
-          placeholder="Ask Nova about career paths, interview questions, or projects..."
-          className="flex-1 bg-transparent px-3 py-1.5 text-xs font-medium text-stone-900 outline-none placeholder:text-stone-400"
+          aria-label="Message Nova"
+          maxLength={2000}
+          placeholder="Ask about a topic, a lecture, a notice, or your career…"
+          className="flex-1 bg-transparent px-3 py-1.5 text-[13px] font-medium text-stone-900 outline-none placeholder:text-stone-400"
         />
-
         <button
-          type="button"
-          onClick={() => handleSend()}
+          type="submit"
           disabled={loading || !input.trim()}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#8B2635] text-white shadow-sm hover:bg-[#77212e] transition-all disabled:opacity-40"
+          aria-label="Send message"
+          className="btn-press flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#8B2635] text-white shadow-sm transition-all hover:bg-[#77212e] disabled:opacity-40"
         >
-          <i className="fa-solid fa-arrow-up text-xs" />
+          <i className={`fa-solid ${loading ? 'fa-spinner fa-spin' : 'fa-arrow-up'} text-xs`} />
         </button>
-      </div>
+      </form>
+      <p className="-mt-2 text-center text-[10px] text-stone-400">
+        Nova only states college facts that appear in NPCCSM material. AI can still make mistakes, so check important details with your faculty.
+      </p>
     </div>
   );
 }

@@ -11,3 +11,6 @@
 /storage/app/public/*
 !/storage/app/private/.gitignore
 !/storage/app/public/.gitignore
+
+# Built SPA served by Laravel
+/public/spa

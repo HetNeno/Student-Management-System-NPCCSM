@@ -1,5 +1,6 @@
-import { useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import BrandLogo from '../shared/BrandLogo';
 
 const SEMESTERS = [1, 2, 3, 4, 5, 6];
 
@@ -14,7 +15,7 @@ const ACCENTS = {
   },
 };
 
-export default function Header({ icon, title, subtitle, accent = 'emerald', semester, onSemesterChange, right }) {
+export default function Header({ icon, title, subtitle, accent = 'emerald', semester, onSemesterChange, right, links = [] }) {
   const palette = ACCENTS[accent] || ACCENTS.emerald;
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -29,6 +30,8 @@ export default function Header({ icon, title, subtitle, accent = 'emerald', seme
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center justify-between w-full md:w-auto gap-3">
           <div className="flex items-center gap-3">
+            <BrandLogo className="hidden h-10 xl:block" />
+            <span className="hidden h-10 w-px bg-slate-200 xl:block" aria-hidden="true" />
             <div className="relative flex-shrink-0 flex items-center justify-center bg-slate-50 border border-slate-200 rounded-xl p-1 shadow-sm h-12 w-12 overflow-hidden">
               <i className={`${icon} ${palette.icon} text-2xl`} />
             </div>
@@ -54,6 +57,26 @@ export default function Header({ icon, title, subtitle, accent = 'emerald', seme
         </div>
 
         <div className="flex flex-wrap items-center justify-between md:justify-end gap-3 w-full md:w-auto">
+          {links.length > 0 && (
+            <nav aria-label="Section" className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
+              {links.map((link) => (
+                <NavLink
+                  key={link.to}
+                  to={link.to}
+                  end
+                  className={({ isActive }) =>
+                    `flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
+                      isActive ? 'bg-[#8B2635] text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                    }`
+                  }
+                >
+                  {link.icon && <i className={`${link.icon} text-[11px]`} />}
+                  {link.label}
+                </NavLink>
+              ))}
+            </nav>
+          )}
+
           {right && <div>{right}</div>}
 
           {onSemesterChange && (

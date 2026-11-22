@@ -1,412 +1,339 @@
-import { useState, useMemo, useEffect } from 'react';
-import { useOutletContext } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { useToast } from '../../components/shared/Toast';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { getProjects, leaveProject, saveProjectProgress, startProject } from '../../lib/apiClient';
 
-const PROJECTS_DATA = [
-  {
-    id: 'p1',
-    title: 'Enterprise Java Management Portal',
-    description: 'Build a production-ready Java application using OOP principles, JDBC, and relational database management.',
-    category: 'Backend',
-    difficulty: 'Intermediate',
-    hours: '25-35 hrs',
-    tech: ['Java', 'JDBC', 'MySQL', 'OOP'],
-    milestones: [
-      'Design relational schema with normalization (1NF, 2NF, 3NF)',
-      'Implement DAO layer and connection pooling',
-      'Create CRUD controllers with validation and exception handling',
-      'Add role-based authentication and audit logging',
-    ],
-  },
-  {
-    id: 'p2',
-    title: 'Full-Stack Student Portfolio & Task Hub',
-    description: 'Create a responsive web application with dynamic state management, Kanban boards, and clean API integration.',
-    category: 'Web',
-    difficulty: 'Intermediate',
-    hours: '20-30 hrs',
-    tech: ['React', 'Tailwind CSS', 'REST API', 'JavaScript'],
-    milestones: [
-      'Set up component hierarchy and Tailwind design tokens',
-      'Implement local storage and backend sync for tasks',
-      'Add filterable categories and drag-and-drop state updates',
-      'Deploy application on Vercel or Netlify',
-    ],
-  },
-  {
-    id: 'p3',
-    title: 'Secure Authentication & Microservice API',
-    description: 'Design and deploy a backend REST API with JWT tokens, password hashing, and role middleware.',
-    category: 'Backend',
-    difficulty: 'Advanced',
-    hours: '30-40 hrs',
-    tech: ['Node.js', 'Express', 'JWT', 'PostgreSQL'],
-    milestones: [
-      'Initialize Express app with security headers and CORS',
-      'Configure PostgreSQL models and migrations',
-      'Implement JWT token refresh rotation and bcrypt hashing',
-      'Write integration tests and API documentation',
-    ],
-  },
-  {
-    id: 'p4',
-    title: 'Student Analytics & Performance Dashboard',
-    description: 'Connect to database records, transform aggregate academic metrics, and render interactive charts.',
-    category: 'Data',
-    difficulty: 'Beginner',
-    hours: '15-20 hrs',
-    tech: ['Python', 'Pandas', 'SQL', 'Chart.js'],
-    milestones: [
-      'Extract CSV and database records using SQL queries',
-      'Compute aggregate statistics (mean, percentiles, distribution)',
-      'Render SVG/Canvas visualization charts',
-      'Export formatted reports as PDF',
-    ],
-  },
-  {
-    id: 'p5',
-    title: 'Mobile Attendance & Syllabus Companion',
-    description: 'Build a cross-platform mobile companion app for tracking lecture attendance and topic coverage.',
-    category: 'Mobile',
-    difficulty: 'Advanced',
-    hours: '35-45 hrs',
-    tech: ['React Native', 'SQLite', 'Mobile UI'],
-    milestones: [
-      'Configure mobile navigation and tab layout',
-      'Store offline attendance records in SQLite database',
-      'Implement push reminders and syllabus checklist',
-      'Build native bundle for Android testing',
-    ],
-  },
-  {
-    id: 'p6',
-    title: 'Personal Developer Portfolio & Blog',
-    description: 'Showcase your BCA coursework, projects, resume, and tech articles with a fast, modern static site.',
-    category: 'Web',
-    difficulty: 'Beginner',
-    hours: '10-15 hrs',
-    tech: ['HTML5', 'Tailwind', 'JavaScript', 'Git'],
-    milestones: [
-      'Design clean, accessible layout with semantic tags',
-      'Add interactive project showcase and resume preview',
-      'Implement contact form with client validation',
-      'Connect custom domain and GitHub Pages deployment',
-    ],
-  },
-];
+const DIFFICULTIES = ['All', 'Beginner', 'Intermediate', 'Advanced'];
 
-export default function StudentProjects() {
-  const { semester } = useOutletContext();
-  const { user } = useAuth();
-  const toast = useToast();
+const DIFFICULTY_STYLE = {
+  Beginner: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
+  Intermediate: 'bg-amber-50 text-amber-700 ring-amber-200',
+  Advanced: 'bg-rose-50 text-rose-700 ring-rose-200',
+};
 
-  const [categoryFilter, setCategoryFilter] = useState('All');
-  const [difficultyFilter, setDifficultyFilter] = useState('All');
-  const [selectedProject, setSelectedProject] = useState(null);
-  const [startedProjects, setStartedProjects] = useState([]);
-  const [checklist, setChecklist] = useState({});
+function StatusBadge({ enrollment }) {
+  if (!enrollment) {
+    return <span className="rounded-full bg-stone-100 px-2.5 py-0.5 text-[11px] font-bold text-stone-500 ring-1 ring-stone-200">Not started</span>;
+  }
+  if (enrollment.status === 'completed') {
+    return (
+      <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 ring-1 ring-emerald-200">
+        <i className="fa-solid fa-check mr-1" />Completed
+      </span>
+    );
+  }
+  return (
+    <span className="rounded-full bg-[#8B2635]/5 px-2.5 py-0.5 text-[11px] font-bold text-[#8B2635] ring-1 ring-[#8B2635]/20">
+      In progress · {enrollment.progress}%
+    </span>
+  );
+}
 
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(`npccsm_projects_${user?.id || 'guest'}`);
-      if (saved) setStartedProjects(JSON.parse(saved));
-    } catch {}
+function SkeletonRows() {
+  return (
+    <ul aria-hidden="true" className="divide-y divide-stone-100">
+      {[0, 1, 2, 3].map((i) => (
+        <li key={i} className="flex gap-5 px-5 py-6 sm:px-7">
+          <div className="h-6 w-8 animate-pulse rounded bg-stone-100" />
+          <div className="flex-1 space-y-2.5">
+            <div className="h-4 w-1/2 animate-pulse rounded bg-stone-100" />
+            <div className="h-3 w-5/6 animate-pulse rounded bg-stone-100" />
+            <div className="h-3 w-1/3 animate-pulse rounded bg-stone-100" />
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
-    try {
-      const savedChecks = localStorage.getItem(`npccsm_proj_checks_${user?.id || 'guest'}`);
-      if (savedChecks) setChecklist(JSON.parse(savedChecks));
-    } catch {}
-  }, [user?.id]);
-
-  const handleToggleStart = (proj) => {
-    const isStarted = startedProjects.includes(proj.id);
-    let next;
-    if (isStarted) {
-      next = startedProjects.filter((id) => id !== proj.id);
-      toast.show('Project removed from in-progress list.', 'info');
-    } else {
-      next = [...startedProjects, proj.id];
-      toast.show(`Started "${proj.title}"! Track your milestones below.`, 'success');
-      setSelectedProject(proj);
-    }
-    setStartedProjects(next);
-    localStorage.setItem(`npccsm_projects_${user?.id || 'guest'}`, JSON.stringify(next));
-  };
-
-  const handleToggleMilestone = (projId, mIdx) => {
-    setChecklist((prev) => {
-      const current = prev[projId] || {};
-      const updated = { ...prev, [projId]: { ...current, [mIdx]: !current[mIdx] } };
-      localStorage.setItem(`npccsm_proj_checks_${user?.id || 'guest'}`, JSON.stringify(updated));
-      return updated;
-    });
-  };
-
-  const filteredProjects = useMemo(() => {
-    return PROJECTS_DATA.filter((p) => {
-      const matchesCat = categoryFilter === 'All' || p.category === categoryFilter;
-      const matchesDiff = difficultyFilter === 'All' || p.difficulty === difficultyFilter;
-      return matchesCat && matchesDiff;
-    });
-  }, [categoryFilter, difficultyFilter]);
+function ProjectDetails({ project, busy, onStart, onLeave, onToggleMilestone }) {
+  const enrollment = project.enrollment;
+  const done = new Set(enrollment?.completed_milestones || []);
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
-      {/* ── Page Header with Glass Effect ── */}
-      <div className="rounded-2xl border border-stone-200/70 bg-white/85 backdrop-blur-md p-6 md:p-7 shadow-[0_8px_30px_rgb(0,0,0,0.02)]">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <div className="flex items-center gap-2.5">
-              <span className="text-[10px] font-black uppercase tracking-wider text-[#8B2635]">
-                Portfolio Hub
-              </span>
-              <span className="rounded-full bg-stone-100 border border-stone-200/80 px-2.5 py-0.5 text-[10px] font-bold text-stone-600">
-                Semester {semester}
-              </span>
-            </div>
-            <h1 className="text-xl md:text-2xl font-black tracking-tight text-stone-900 mt-1">
-              Practical Projects &amp; Resume Exercises
-            </h1>
-            <p className="text-xs font-medium text-stone-500 mt-0.5">
-              Bridge academic theory with industry portfolio projects. Start building to demonstrate skills to recruiters.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="rounded-xl border border-stone-200/80 bg-[#FAF7F5] px-4 py-2 text-center shadow-sm">
-              <span className="text-[10px] font-black uppercase tracking-wider text-stone-400">
-                In Progress
-              </span>
-              <p className="text-base font-black text-stone-900 mt-0.5">
-                {startedProjects.length} Projects
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Filters Strip ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-stone-200/70 bg-white/85 backdrop-blur-md p-4 shadow-[0_8px_30px_rgb(0,0,0,0.02)]">
-        {/* Category Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 custom-scrollbar">
-          <span className="text-[11px] font-black uppercase tracking-wider text-stone-400 mr-1 hidden md:inline">
-            Category:
-          </span>
-          {['All', 'Backend', 'Web', 'Data', 'Mobile'].map((cat) => (
-            <button
-              key={cat}
-              type="button"
-              onClick={() => setCategoryFilter(cat)}
-              className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all ${
-                categoryFilter === cat
-                  ? 'bg-[#8B2635] text-white shadow-sm font-black'
-                  : 'bg-[#FAF7F5] text-stone-700 hover:bg-stone-200/70'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-
-        {/* Difficulty Filter */}
-        <div className="flex items-center gap-1.5 self-start sm:self-auto">
-          <span className="text-[11px] font-black uppercase tracking-wider text-stone-400 mr-1 hidden md:inline">
-            Difficulty:
-          </span>
-          {['All', 'Beginner', 'Intermediate', 'Advanced'].map((diff) => (
-            <button
-              key={diff}
-              type="button"
-              onClick={() => setDifficultyFilter(diff)}
-              className={`rounded-xl px-2.5 py-1 text-xs font-bold transition-all ${
-                difficultyFilter === diff
-                  ? 'border border-[#8B2635] bg-[#FFF1F2] text-[#8B2635] font-black'
-                  : 'text-stone-500 hover:text-stone-800'
-              }`}
-            >
-              {diff}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Main Projects Grid & Milestone Drawer ── */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        {/* Project Cards List */}
-        <div className={`space-y-4 ${selectedProject ? 'lg:col-span-7' : 'lg:col-span-12'}`}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {filteredProjects.map((proj) => {
-              const isStarted = startedProjects.includes(proj.id);
-              const isSelected = selectedProject?.id === proj.id;
-              const checks = checklist[proj.id] || {};
-              const checkedCount = Object.values(checks).filter(Boolean).length;
-              const progressPct = Math.round((checkedCount / proj.milestones.length) * 100);
-
+    <div id={`project-${project.id}-details`} className="mt-4 anim-slide-down rounded-xl border border-stone-200/80 bg-stone-50/70 p-4 sm:p-5">
+      <div className="grid gap-5 md:grid-cols-[1fr_auto]">
+        <div>
+          <h4 className="text-xs font-black uppercase tracking-wider text-stone-500">Milestones</h4>
+          <ol className="mt-3 space-y-2">
+            {project.milestones.map((step, idx) => {
+              const checked = done.has(idx);
               return (
-                <div
-                  key={proj.id}
-                  onClick={() => setSelectedProject(proj)}
-                  className={`group cursor-pointer rounded-2xl border p-5 transition-all duration-200 shadow-[0_8px_30px_rgb(0,0,0,0.02)] flex flex-col justify-between ${
-                    isSelected
-                      ? 'border-[#8B2635] bg-[#FFF1F2]/50 ring-1 ring-[#8B2635]'
-                      : 'border-stone-200/70 bg-white/85 backdrop-blur-md hover:border-stone-300 hover:shadow-md'
-                  }`}
-                >
-                  <div>
-                    <div className="flex items-start justify-between gap-2">
-                      <span className="rounded-md bg-stone-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-stone-600">
-                        {proj.category}
-                      </span>
-                      <span className="rounded-md border border-stone-200 bg-[#FAF7F5] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-stone-700">
-                        {proj.difficulty}
-                      </span>
-                    </div>
-
-                    <h3 className="mt-2.5 text-sm font-black text-stone-900 group-hover:text-[#8B2635] transition-colors leading-snug">
-                      {proj.title}
-                    </h3>
-                    <p className="mt-1 text-xs text-stone-500 leading-relaxed line-clamp-2">
-                      {proj.description}
-                    </p>
-
-                    <div className="mt-3 flex flex-wrap gap-1.5">
-                      {proj.tech.map((t) => (
-                        <span
-                          key={t}
-                          className="rounded-md bg-[#FAF7F5] border border-stone-200/60 px-2 py-0.5 text-[10px] font-medium text-stone-600"
-                        >
-                          {t}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between">
-                    <span className="text-[11px] font-medium text-stone-400 flex items-center gap-1">
-                      <i className="fa-regular fa-clock text-[10px]" /> {proj.hours}
-                    </span>
-
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleToggleStart(proj);
-                      }}
-                      className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
-                        isStarted
-                          ? 'bg-stone-800 text-white shadow-sm'
-                          : 'bg-[#8B2635] text-white shadow-sm hover:bg-[#77212e]'
-                      }`}
-                    >
-                      {isStarted ? (
-                        <>
-                          <i className="fa-solid fa-check mr-1 text-[10px]" />
-                          <span>{progressPct}% Done</span>
-                        </>
-                      ) : (
-                        <span>Start Project</span>
-                      )}
-                    </button>
-                  </div>
-                </div>
+                <li key={idx}>
+                  <label
+                    className={`flex items-start gap-3 rounded-lg px-2 py-1.5 text-sm transition-colors ${
+                      enrollment ? 'cursor-pointer hover:bg-white' : 'cursor-default'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="mt-0.5 h-4 w-4 shrink-0 accent-[#8B2635] disabled:opacity-40"
+                      checked={checked}
+                      disabled={!enrollment || busy}
+                      onChange={() => onToggleMilestone(project, idx)}
+                    />
+                    <span className={checked ? 'text-stone-400 line-through' : 'text-stone-700'}>{step}</span>
+                  </label>
+                </li>
               );
             })}
-          </div>
+          </ol>
+          {!enrollment && <p className="mt-3 text-xs text-stone-500">Start the project to track your milestones.</p>}
         </div>
 
-        {/* Selected Project Milestone Drawer */}
-        {selectedProject && (
-          <div className="lg:col-span-5 space-y-4">
-            <div className="rounded-2xl border border-stone-200/70 bg-white/85 backdrop-blur-md p-5 shadow-[0_8px_30px_rgb(0,0,0,0.02)]">
-              <div className="flex items-start justify-between gap-3 border-b border-stone-100 pb-3">
-                <div>
-                  <span className="rounded-md bg-stone-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-stone-700">
-                    {selectedProject.category} &middot; {selectedProject.difficulty}
-                  </span>
-                  <h2 className="text-base font-black text-stone-900 tracking-tight mt-1.5 leading-snug">
-                    {selectedProject.title}
-                  </h2>
+        <div className="flex flex-row gap-2 md:flex-col md:items-stretch md:min-w-[160px]">
+          {enrollment ? (
+            <>
+              <div className="flex-1 md:flex-none">
+                <div className="mb-1 flex justify-between text-[11px] font-bold text-stone-500">
+                  <span>Progress</span>
+                  <span>{enrollment.progress}%</span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setSelectedProject(null)}
-                  className="flex h-7 w-7 items-center justify-center rounded-lg text-stone-400 hover:bg-stone-100 hover:text-stone-700"
-                >
-                  <i className="fa-solid fa-xmark text-xs" />
-                </button>
-              </div>
-
-              <p className="text-xs text-stone-600 mt-2.5 leading-relaxed">
-                {selectedProject.description}
-              </p>
-
-              {/* Milestone Checklist */}
-              <div className="mt-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-[11px] font-black uppercase tracking-wider text-stone-700">
-                    Milestone Tasks
-                  </h3>
-                  <span className="text-[10px] font-bold text-stone-400">
-                    Click to check off
-                  </span>
-                </div>
-
-                <div className="space-y-2">
-                  {selectedProject.milestones.map((step, sIdx) => {
-                    const isChecked = !!checklist[selectedProject.id]?.[sIdx];
-                    return (
-                      <div
-                        key={step}
-                        onClick={() => handleToggleMilestone(selectedProject.id, sIdx)}
-                        className={`group cursor-pointer flex items-start gap-3 rounded-xl border p-3 transition-all ${
-                          isChecked
-                            ? 'border-stone-300 bg-[#FAF7F5]'
-                            : 'border-stone-200/70 bg-white/90 hover:border-stone-300'
-                        }`}
-                      >
-                        <div
-                          className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-md border-2 ${
-                            isChecked
-                              ? 'border-[#8B2635] bg-[#8B2635] text-white'
-                              : 'border-stone-300 bg-white'
-                          }`}
-                        >
-                          {isChecked && <i className="fa-solid fa-check text-[9px]" />}
-                        </div>
-                        <p
-                          className={`text-xs font-semibold leading-relaxed ${
-                            isChecked ? 'line-through text-stone-400' : 'text-stone-800'
-                          }`}
-                        >
-                          {step}
-                        </p>
-                      </div>
-                    );
-                  })}
+                <div className="h-2 overflow-hidden rounded-full bg-stone-200" role="progressbar" aria-valuenow={enrollment.progress} aria-valuemin={0} aria-valuemax={100} aria-label={`${project.title} progress`}>
+                  <div className="h-full rounded-full bg-[#8B2635] transition-[width] duration-500" style={{ width: `${enrollment.progress}%` }} />
                 </div>
               </div>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => onLeave(project)}
+                className="btn-press rounded-lg border border-stone-300 bg-white px-3 py-2 text-xs font-bold text-stone-600 hover:border-rose-300 hover:text-rose-700 disabled:opacity-50"
+              >
+                Leave project
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => onStart(project)}
+              className="btn-press rounded-lg bg-[#8B2635] px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-[#7a1f2d] disabled:opacity-50"
+            >
+              {busy ? 'Starting…' : 'Start project'}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
-              {/* Action Button */}
-              <div className="mt-5 pt-3 border-t border-stone-100">
-                <button
-                  type="button"
-                  onClick={() => handleToggleStart(selectedProject)}
-                  className={`w-full rounded-xl py-2.5 text-xs font-bold transition-all ${
-                    startedProjects.includes(selectedProject.id)
-                      ? 'border border-stone-300 text-stone-700 hover:bg-stone-50'
-                      : 'bg-[#8B2635] text-white shadow-sm hover:bg-[#77212e]'
-                  }`}
-                >
-                  {startedProjects.includes(selectedProject.id)
-                    ? 'Remove from Active'
-                    : 'Mark as In-Progress'}
-                </button>
-              </div>
-            </div>
-          </div>
+export default function StudentProjects() {
+  const [projects, setProjects] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [category, setCategory] = useState('All');
+  const [difficulty, setDifficulty] = useState('All');
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [actionError, setActionError] = useState('');
+  const [openId, setOpenId] = useState(null);
+  const [busyId, setBusyId] = useState(null);
+  const requestId = useRef(0);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  const load = useCallback(async () => {
+    const id = ++requestId.current;
+    setLoading(true);
+    setError('');
+    try {
+      const res = await getProjects({ category, difficulty, search: debouncedSearch });
+      if (id !== requestId.current) return; // a newer request superseded this one
+      setProjects(res.data || []);
+      setCategories(res.categories || []);
+    } catch (err) {
+      if (id === requestId.current) setError(err.message);
+    } finally {
+      if (id === requestId.current) setLoading(false);
+    }
+  }, [category, difficulty, debouncedSearch]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const replaceProject = (updated) => setProjects((list) => list.map((p) => (p.id === updated.id ? { ...p, ...updated } : p)));
+
+  const runAction = async (project, fn) => {
+    setBusyId(project.id);
+    setActionError('');
+    try {
+      const res = await fn();
+      replaceProject(res.data);
+    } catch (err) {
+      replaceProject(project); // undo any optimistic change
+      setActionError(err.message);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const handleStart = (project) => runAction(project, () => startProject(project.id));
+  const handleLeave = (project) => {
+    if (!window.confirm(`Leave "${project.title}"? Your milestone progress for it will be removed.`)) return;
+    runAction(project, () => leaveProject(project.id));
+  };
+  const handleToggleMilestone = (project, idx) => {
+    const current = new Set(project.enrollment?.completed_milestones || []);
+    current.has(idx) ? current.delete(idx) : current.add(idx);
+    const next = [...current].sort((a, b) => a - b);
+    // Optimistic update; runAction restores `project` if the save fails.
+    const total = project.milestones.length || 1;
+    replaceProject({
+      ...project,
+      enrollment: { ...project.enrollment, completed_milestones: next, progress: Math.round((next.length / total) * 100) },
+    });
+    runAction(project, () => saveProjectProgress(project.id, next));
+  };
+
+  const summary = useMemo(() => {
+    const started = projects.filter((p) => p.enrollment).length;
+    const completed = projects.filter((p) => p.enrollment?.status === 'completed').length;
+    return { started, completed };
+  }, [projects]);
+
+  const filtersActive = category !== 'All' || difficulty !== 'All' || debouncedSearch !== '';
+
+  return (
+    <div className="mx-auto max-w-5xl space-y-5">
+      {/* Header */}
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#8B2635]">Portfolio builder</p>
+          <h1 className="mt-1 text-2xl font-black tracking-tight text-stone-900">Project List</h1>
+          <p className="mt-1 text-sm text-stone-500">Practical projects published by your faculty. Start one and track each milestone.</p>
+        </div>
+        {!loading && !error && (
+          <p className="text-xs font-semibold text-stone-500">
+            {summary.started} started · {summary.completed} completed
+          </p>
         )}
       </div>
+
+      {/* Filters */}
+      <div className="flex flex-col gap-3 rounded-2xl border border-stone-200/70 bg-white/85 p-3 backdrop-blur sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <i className="fa-solid fa-magnifying-glass pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-stone-400" />
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search projects"
+            aria-label="Search projects"
+            className="w-full rounded-xl border border-stone-200 bg-stone-50 py-2.5 pl-9 pr-3 text-sm outline-none transition focus:border-[#8B2635]/40 focus:bg-white focus:ring-4 focus:ring-[#8B2635]/10"
+          />
+        </div>
+        <select
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          aria-label="Filter by category"
+          className="rounded-xl border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm font-semibold text-stone-700 outline-none focus:border-[#8B2635]/40"
+        >
+          <option value="All">All categories</option>
+          {categories.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
+        <select
+          value={difficulty}
+          onChange={(e) => setDifficulty(e.target.value)}
+          aria-label="Filter by difficulty"
+          className="rounded-xl border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm font-semibold text-stone-700 outline-none focus:border-[#8B2635]/40"
+        >
+          {DIFFICULTIES.map((d) => (
+            <option key={d} value={d}>{d === 'All' ? 'All levels' : d}</option>
+          ))}
+        </select>
+      </div>
+
+      {actionError && (
+        <div role="alert" className="flex items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          <span><i className="fa-solid fa-circle-exclamation mr-2" />{actionError}</span>
+          <button type="button" onClick={() => { setActionError(''); load(); }} className="text-xs font-bold underline">Refresh</button>
+        </div>
+      )}
+
+      {/* ONE unified container for the whole list */}
+      <section aria-labelledby="project-list-heading" className="overflow-hidden rounded-2xl border border-stone-200/80 bg-white shadow-[0_8px_30px_rgb(0,0,0,0.03)]">
+        <div className="flex items-center justify-between border-b border-stone-100 bg-stone-50/60 px-5 py-3 sm:px-7">
+          <h2 id="project-list-heading" className="text-xs font-black uppercase tracking-[0.18em] text-stone-600">Project list</h2>
+          {!loading && !error && <span className="text-xs font-semibold text-stone-400">{projects.length} {projects.length === 1 ? 'project' : 'projects'}</span>}
+        </div>
+
+        {loading ? (
+          <SkeletonRows />
+        ) : error ? (
+          <div className="px-6 py-14 text-center" role="alert">
+            <i className="fa-solid fa-triangle-exclamation text-2xl text-rose-400" />
+            <p className="mt-3 text-sm font-semibold text-stone-700">Could not load projects</p>
+            <p className="mt-1 text-xs text-stone-500">{error}</p>
+            <button type="button" onClick={load} className="btn-press mt-4 rounded-lg bg-[#8B2635] px-4 py-2 text-xs font-bold text-white">Try again</button>
+          </div>
+        ) : projects.length === 0 ? (
+          <div className="px-6 py-14 text-center">
+            <i className="fa-solid fa-folder-open text-2xl text-stone-300" />
+            <p className="mt-3 text-sm font-semibold text-stone-700">{filtersActive ? 'No projects match your filters' : 'No projects published yet'}</p>
+            <p className="mt-1 text-xs text-stone-500">
+              {filtersActive ? 'Try a different search or clear the filters.' : 'Your faculty will publish projects here.'}
+            </p>
+            {filtersActive && (
+              <button type="button" onClick={() => { setSearch(''); setCategory('All'); setDifficulty('All'); }} className="mt-4 text-xs font-bold text-[#8B2635] underline">
+                Clear filters
+              </button>
+            )}
+          </div>
+        ) : (
+          <ol className="divide-y divide-stone-100">
+            {projects.map((project, index) => {
+              const open = openId === project.id;
+              return (
+                <li key={project.id} className="list-row-in group px-5 py-5 transition-colors duration-200 hover:bg-stone-50/70 sm:px-7" style={{ animationDelay: `${Math.min(index * 40, 280)}ms` }}>
+                  <div className="flex gap-4 sm:gap-6">
+                    <span className="w-8 shrink-0 pt-0.5 font-mono text-lg font-bold tabular-nums text-[#8B2635]/70 transition-colors group-hover:text-[#8B2635]" aria-hidden="true">
+                      {String(index + 1).padStart(2, '0')}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                        <h3 className="text-base font-bold text-stone-900">{project.title}</h3>
+                        <StatusBadge enrollment={project.enrollment} />
+                      </div>
+                      <p className="mt-1.5 text-sm leading-6 text-stone-600">{project.description}</p>
+                      <div className="mt-2.5 flex flex-wrap items-center gap-2 text-[11px] font-semibold text-stone-500">
+                        <span className="rounded-md bg-stone-100 px-2 py-0.5">{project.category}</span>
+                        <span className={`rounded-md px-2 py-0.5 ring-1 ${DIFFICULTY_STYLE[project.difficulty] || ''}`}>{project.difficulty}</span>
+                        {project.estimated_hours && <span><i className="fa-regular fa-clock mr-1" />{project.estimated_hours}</span>}
+                        {project.tech?.length > 0 && <span className="text-stone-400">· {project.tech.join(' · ')}</span>}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setOpenId(open ? null : project.id)}
+                        aria-expanded={open}
+                        aria-controls={`project-${project.id}-details`}
+                        className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-[#8B2635] hover:underline"
+                      >
+                        {open ? 'Hide details' : 'View details'}
+                        <i className={`fa-solid fa-chevron-down text-[9px] transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+                      </button>
+                      {open && (
+                        <ProjectDetails
+                          project={project}
+                          busy={busyId === project.id}
+                          onStart={handleStart}
+                          onLeave={handleLeave}
+                          onToggleMilestone={handleToggleMilestone}
+                        />
+                      )}
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+        )}
+      </section>
     </div>
   );
 }
