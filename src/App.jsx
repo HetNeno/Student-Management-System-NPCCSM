@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import AmbientBackground from './components/layout/AmbientBackground';
 import { SyllabusProvider } from './context/SyllabusContext';
 import { AuthProvider } from './context/AuthContext';
@@ -13,9 +13,19 @@ import StudentSyllabus from './pages/student/StudentSyllabus';
 import StudentCareer from './pages/student/StudentCareer';
 import StudentProjects from './pages/student/StudentProjects';
 import StudentResources from './pages/student/StudentResources';
+import LandingPage from './pages/LandingPage';
 
-function PageTransitions() {
-  return null;
+function PageTransitions({ children }) {
+  const location = useLocation();
+
+  return (
+    <div
+      key={location.pathname}
+      className="page-transition"
+    >
+      {children}
+    </div>
+  );
 }
 
 export default function App() {
@@ -48,46 +58,47 @@ export default function App() {
     <AuthProvider>
       <SyllabusProvider>
         <AmbientBackground />
-        <HashRouter>
-          <PageTransitions />
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route
-              path="/principal"
-              element={
-                <ProtectedRoute allowedRole="principal">
-                  <PrincipalDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/teacher"
-              element={
-                <ProtectedRoute allowedRole="teacher">
-                  <TeacherStudio />
-                </ProtectedRoute>
-              }
-            />
-            {/* ── Student Portal with Sidebar Layout ── */}
-            <Route
-              path="/student"
-              element={
-                <ProtectedRoute allowedRole="student">
-                  <StudentLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<StudentOverview />} />
-              <Route path="syllabus" element={<StudentSyllabus />} />
-              <Route path="career" element={<StudentCareer />} />
-              <Route path="projects" element={<StudentProjects />} />
-              <Route path="resources" element={<StudentResources />} />
-            </Route>
+        <BrowserRouter>
+          <PageTransitions>
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route
+                path="/principal"
+                element={
+                  <ProtectedRoute allowedRole="principal">
+                    <PrincipalDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/teacher"
+                element={
+                  <ProtectedRoute allowedRole="teacher">
+                    <TeacherStudio />
+                  </ProtectedRoute>
+                }
+              />
+              {/* ── Student Portal with Sidebar Layout ── */}
+              <Route
+                path="/student"
+                element={
+                  <ProtectedRoute allowedRole="student">
+                    <StudentLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<StudentOverview />} />
+                <Route path="syllabus" element={<StudentSyllabus />} />
+                <Route path="career" element={<StudentCareer />} />
+                <Route path="projects" element={<StudentProjects />} />
+                <Route path="resources" element={<StudentResources />} />
+              </Route>
 
-            <Route path="/" element={<Navigate to="/login" replace />} />
-            <Route path="*" element={<Navigate to="/login" replace />} />
-          </Routes>
-        </HashRouter>
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </PageTransitions>
+        </BrowserRouter>
       </SyllabusProvider>
     </AuthProvider>
   );

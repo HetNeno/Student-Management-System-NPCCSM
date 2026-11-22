@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { isApiConfigured as isSupabaseConfigured } from '../lib/apiClient';
 
 const ROLES = [
   {
@@ -11,8 +10,6 @@ const ROLES = [
     icon: 'fas fa-user-graduate',
     color: '#3B82F6',
     desc: 'Track covered topics and exam-ready notes',
-    defaultUser: 'student',
-    defaultPass: 'student123',
   },
   {
     id: 'teacher',
@@ -21,8 +18,6 @@ const ROLES = [
     icon: 'fas fa-chalkboard-teacher',
     color: '#10B981',
     desc: 'Publish lectures, notes, and completion updates',
-    defaultUser: 'teacher',
-    defaultPass: 'teacher123',
   },
   {
     id: 'principal',
@@ -31,8 +26,6 @@ const ROLES = [
     icon: 'fas fa-user-tie',
     color: '#8B5CF6',
     desc: 'Monitor semester-wise academic delivery',
-    defaultUser: 'principal',
-    defaultPass: 'principal123',
   },
 ];
 
@@ -80,6 +73,14 @@ export default function LoginPage() {
   useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const role = params.get('role');
+    if (ROLES.some((item) => item.id === role)) {
+      setActiveRole(role);
+    }
+  }, [location.search]);
+
+  useEffect(() => {
     if (user) {
       const roleTarget = ROLES.find((r) => r.id === user.role)?.path || '/student';
       navigate(roleTarget, { replace: true });
@@ -93,20 +94,18 @@ export default function LoginPage() {
     setErrorMsg('');
   };
 
-  const handleQuickFill = () => {
-    setUsername(selectedRoleConfig.defaultUser);
-    setPassword(selectedRoleConfig.defaultPass);
-    setErrorMsg('');
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
     setSubmitting(true);
     try {
-      await login({ username, password, role: activeRole });
+      const result = await login({ username, password, role: activeRole });
+      if (!result.success) {
+        setErrorMsg(result.error);
+      }
     } catch (err) {
       setErrorMsg('An unexpected error occurred. Please try again.');
+    } finally {
       setSubmitting(false);
     }
   };
@@ -262,23 +261,6 @@ export default function LoginPage() {
                   </div>
                 )}
 
-                {/* Demo Mode Notice */}
-                {!isSupabaseConfigured && (
-                  <div className="mb-4 flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
-                    <span className="flex items-center gap-2">
-                      <i className="fas fa-flask text-amber-600" />
-                      Demo Mode Active
-                    </span>
-                    <button
-                      type="button"
-                      onClick={handleQuickFill}
-                      className="rounded-lg bg-amber-100 px-3 py-1 font-bold uppercase tracking-wider text-amber-700 transition-all hover:bg-amber-200 hover:scale-105"
-                    >
-                      Auto Fill
-                    </button>
-                  </div>
-                )}
-
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="space-y-4">
                   {/* Username Input */}
@@ -382,12 +364,6 @@ export default function LoginPage() {
                   </button>
                 </form>
 
-                {/* Footer */}
-                <div className="mt-6 text-center">
-                  <p className="text-xs" style={{ color: '#94A3B8' }}>
-                    Demo: <span className="font-medium" style={{ color: '#64748B' }}>student</span> / <span className="font-medium" style={{ color: '#64748B' }}>student123</span>
-                  </p>
-                </div>
               </div>
             </div>
           </div>

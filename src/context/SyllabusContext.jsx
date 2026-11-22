@@ -1,6 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import {
-  isApiConfigured,
   getLectureUpdates,
   insertLectureUpdate,
   upsertSyllabusProgress,
@@ -9,7 +8,6 @@ import {
   getLectureHistory,
 } from '../lib/apiClient';
 
-const LOCAL_STORAGE_KEY = 'npccsm_academic_state_v3';
 const POLL_INTERVAL_MS = 30_000; // Poll every 30 seconds (replaces Supabase Realtime)
 const SyllabusContext = createContext(null);
 
@@ -27,35 +25,15 @@ const normalizeLectureRow = (row) => ({
 
 /**
  * Loads/saves per-subject progress state ({ [subjectCode]: { coveredTopics, topicNotes, ... } }).
- * The PostgreSQL backend is the source of truth when configured; otherwise this transparently
- * falls back to localStorage, mirroring the original static-HTML behaviour.
+ * The Laravel API backed by MySQL is the source of truth.
  */
 export function SyllabusProvider({ children }) {
   const [state, setState] = useState({});
   const [loading, setLoading] = useState(true);
-  const [usingFallback, setUsingFallback] = useState(!isApiConfigured);
+  const [usingFallback, setUsingFallback] = useState(false);
   const pollRef = useRef(null);
 
-  const loadLocal = () => {
-    try {
-      return JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY)) || {};
-    } catch {
-      return {};
-    }
-  };
-
-  const saveLocal = (next) => {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(next));
-  };
-
   const refresh = useCallback(async () => {
-    if (!isApiConfigured) {
-      setState(loadLocal());
-      setUsingFallback(true);
-      setLoading(false);
-      return;
-    }
-
     try {
       const data = await getLectureUpdates();
 
@@ -72,9 +50,9 @@ export function SyllabusProvider({ children }) {
       setState(byCode);
       setUsingFallback(false);
     } catch (err) {
-      console.error('[SyllabusContext] Backend read failed, using local fallback:', err.message);
-      setState(loadLocal());
-      setUsingFallback(true);
+      console.error('[SyllabusContext] Backend read failed:', err.message);
+      setState({});
+      setUsingFallback(false);
     } finally {
       setLoading(false);
     }
@@ -83,8 +61,6 @@ export function SyllabusProvider({ children }) {
   // Initial load + polling (replaces Supabase Realtime channel)
   useEffect(() => {
     refresh();
-
-    if (!isApiConfigured) return;
 
     // Poll for changes every POLL_INTERVAL_MS
     pollRef.current = setInterval(() => {
@@ -98,25 +74,6 @@ export function SyllabusProvider({ children }) {
 
   const publishUpdate = useCallback(
     async ({ subjectCode, title, semester, coveredTopics, topicNotes, overallNotes, lectureDate, facultyName }) => {
-      const payload = {
-        code: subjectCode,
-        title,
-        semester,
-        coveredTopics,
-        topicNotes,
-        overallNotes,
-        lastUpdated: lectureDate,
-        facultyName,
-      };
-
-      if (!isApiConfigured) {
-        const next = { ...loadLocal(), [subjectCode]: payload };
-        saveLocal(next);
-        setState(next);
-        setUsingFallback(true);
-        return { ok: true, fallback: true };
-      }
-
       try {
         // 1. Insert into faculty_lecture_updates
         await insertLectureUpdate({
@@ -175,19 +132,14 @@ export function SyllabusProvider({ children }) {
         await refresh();
         return { ok: true, fallback: false };
       } catch (err) {
-        console.error('[SyllabusContext] Backend write failed, saving locally instead:', err.message);
-        const next = { ...loadLocal(), [subjectCode]: payload };
-        saveLocal(next);
-        setState(next);
-        setUsingFallback(true);
-        return { ok: true, fallback: true, error: err.message };
+        console.error('[SyllabusContext] Backend write failed:', err.message);
+        throw err;
       }
     },
     [refresh]
   );
 
   const fetchHistory = useCallback(async () => {
-    if (!isApiConfigured) return [];
     try {
       const data = await getLectureHistory();
       return data.map((log) => ({

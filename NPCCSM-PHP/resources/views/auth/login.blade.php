@@ -58,9 +58,10 @@
                     <div>
                         <label for="role" class="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">Account type</label>
                         <select id="role" name="role" required class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none focus:border-[#b24848] focus:ring-2 focus:ring-[#b24848]/15">
-                            <option value="student" @selected(old('role') === 'student')>Student</option>
-                            <option value="teacher" @selected(old('role') === 'teacher')>Faculty</option>
-                            <option value="principal" @selected(old('role') === 'principal')>Principal / Administrator</option>
+                            @php($selectedRole = old('role', request('role', 'student')))
+                            <option value="student" @selected($selectedRole === 'student')>Student</option>
+                            <option value="teacher" @selected($selectedRole === 'teacher')>Faculty</option>
+                            <option value="principal" @selected($selectedRole === 'principal')>Principal / Administrator</option>
                         </select>
                     </div>
                     <div>

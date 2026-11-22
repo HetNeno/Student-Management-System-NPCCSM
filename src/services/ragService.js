@@ -4,7 +4,7 @@
  * When RAG backend is not available, falls back to the mock service.
  */
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/$/, '');
 
 /**
  * Query the RAG system for context.
@@ -16,6 +16,7 @@ export async function retrieveContext(prompt, options = {}) {
   try {
     const response = await fetch(`${API_BASE}/api/rag/query`, {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         query: prompt,
@@ -31,13 +32,13 @@ export async function retrieveContext(prompt, options = {}) {
 
     const data = await response.json();
     return {
+      answer: data.answer || null,
       chunks: data.chunks || [],
       totalRetrieved: data.totalRetrieved || 0,
     };
   } catch (error) {
-    console.warn('[RAG] Backend unavailable, using mock:', error.message);
-    // Fall back to mock
-    return mockRetrieveContext(prompt, options);
+    console.error('[RAG] Backend unavailable:', error.message);
+    throw error;
   }
 }
 
@@ -89,6 +90,7 @@ export async function uploadPdf(file) {
 
   const response = await fetch(`${API_BASE}/api/rag/ingest/pdf`, {
     method: 'POST',
+    credentials: 'include',
     body: formData,
   });
 
@@ -144,7 +146,7 @@ export async function ingestAll() {
  */
 export async function getRagStats() {
   try {
-    const response = await fetch(`${API_BASE}/api/rag/stats`);
+    const response = await fetch(`${API_BASE}/api/rag/stats`, { credentials: 'include' });
     if (!response.ok) throw new Error('Failed to fetch stats');
     return response.json();
   } catch (error) {
@@ -159,6 +161,7 @@ export async function getRagStats() {
 export async function resetRag() {
   const response = await fetch(`${API_BASE}/api/rag/reset`, {
     method: 'DELETE',
+    credentials: 'include',
   });
 
   if (!response.ok) throw new Error('Reset failed');

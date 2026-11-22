@@ -1,8 +1,8 @@
 // ============================================================================
-// API Client — Connects to the Express backend (replaces Supabase SDK)
+// API Client — Laravel session/API backend
 // ============================================================================
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/$/, '');
 
 /**
  * Whether the backend API is configured (has a non-empty URL).
@@ -16,6 +16,7 @@ export const isApiConfigured = Boolean(API_BASE);
 async function apiFetch(path, options = {}) {
   const url = `${API_BASE}${path}`;
   const res = await fetch(url, {
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json', ...options.headers },
     ...options,
   });
@@ -32,13 +33,23 @@ async function apiFetch(path, options = {}) {
 // ── Auth ────────────────────────────────────────────────────────────────────
 
 /**
- * Login against the PostgreSQL users table via the Express backend.
+ * Login against the Laravel session backend.
  * @returns {{ id, username, role, name, department }}
  */
 export async function apiLogin({ username, password, role }) {
   return apiFetch('/api/auth/login', {
     method: 'POST',
     body: JSON.stringify({ username, password, role }),
+  });
+}
+
+export async function apiGetSession() {
+  return apiFetch('/api/auth/me');
+}
+
+export async function apiLogout() {
+  return apiFetch('/api/auth/logout', {
+    method: 'POST',
   });
 }
 
